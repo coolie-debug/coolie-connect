@@ -180,6 +180,10 @@ function CoolieDashboard() {
           <p className="mt-3 text-center text-xs text-cream/50">Press &amp; hold to confirm</p>
         </Panel>
       </div>
+
+      <Panel title="Earning Tracker · History" icon={<IndianRupee className="h-5 w-5" />} delay={0.4}>
+        <TransactionLedger txns={transactions} perspective="coolie" coolieId={me.id} />
+      </Panel>
     </div>
   );
 }

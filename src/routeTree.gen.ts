@@ -9,38 +9,110 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppPassengerRouteImport } from './routes/_app.passenger'
+import { Route as AppCoolieRouteImport } from './routes/_app.coolie'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppCoolieIndexRouteImport } from './routes/_app.coolie.index'
+import { Route as AppCoolieOnboardRouteImport } from './routes/_app.coolie.onboard'
 
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPassengerRoute = AppPassengerRouteImport.update({
+  id: '/passenger',
+  path: '/passenger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCoolieRoute = AppCoolieRouteImport.update({
+  id: '/coolie',
+  path: '/coolie',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCoolieIndexRoute = AppCoolieIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCoolieRoute,
+} as any)
+const AppCoolieOnboardRoute = AppCoolieOnboardRouteImport.update({
+  id: '/onboard',
+  path: '/onboard',
+  getParentRoute: () => AppCoolieRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AppAdminRoute
+  '/coolie': typeof AppCoolieRouteWithChildren
+  '/passenger': typeof AppPassengerRoute
+  '/coolie/onboard': typeof AppCoolieOnboardRoute
+  '/coolie/': typeof AppCoolieIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AppAdminRoute
+  '/passenger': typeof AppPassengerRoute
+  '/coolie/onboard': typeof AppCoolieOnboardRoute
+  '/coolie': typeof AppCoolieIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/admin': typeof AppAdminRoute
+  '/_app/coolie': typeof AppCoolieRouteWithChildren
+  '/_app/passenger': typeof AppPassengerRoute
+  '/_app/coolie/onboard': typeof AppCoolieOnboardRoute
+  '/_app/coolie/': typeof AppCoolieIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/coolie'
+    | '/passenger'
+    | '/coolie/onboard'
+    | '/coolie/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/admin' | '/passenger' | '/coolie/onboard' | '/coolie'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/_app/admin'
+    | '/_app/coolie'
+    | '/_app/passenger'
+    | '/_app/coolie/onboard'
+    | '/_app/coolie/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +120,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/passenger': {
+      id: '/_app/passenger'
+      path: '/passenger'
+      fullPath: '/passenger'
+      preLoaderRoute: typeof AppPassengerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/coolie': {
+      id: '/_app/coolie'
+      path: '/coolie'
+      fullPath: '/coolie'
+      preLoaderRoute: typeof AppCoolieRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/coolie/': {
+      id: '/_app/coolie/'
+      path: '/'
+      fullPath: '/coolie/'
+      preLoaderRoute: typeof AppCoolieIndexRouteImport
+      parentRoute: typeof AppCoolieRoute
+    }
+    '/_app/coolie/onboard': {
+      id: '/_app/coolie/onboard'
+      path: '/onboard'
+      fullPath: '/coolie/onboard'
+      preLoaderRoute: typeof AppCoolieOnboardRouteImport
+      parentRoute: typeof AppCoolieRoute
+    }
   }
 }
 
+interface AppCoolieRouteChildren {
+  AppCoolieOnboardRoute: typeof AppCoolieOnboardRoute
+  AppCoolieIndexRoute: typeof AppCoolieIndexRoute
+}
+
+const AppCoolieRouteChildren: AppCoolieRouteChildren = {
+  AppCoolieOnboardRoute: AppCoolieOnboardRoute,
+  AppCoolieIndexRoute: AppCoolieIndexRoute,
+}
+
+const AppCoolieRouteWithChildren = AppCoolieRoute._addFileChildren(
+  AppCoolieRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppCoolieRoute: typeof AppCoolieRouteWithChildren
+  AppPassengerRoute: typeof AppPassengerRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppCoolieRoute: AppCoolieRouteWithChildren,
+  AppPassengerRoute: AppPassengerRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

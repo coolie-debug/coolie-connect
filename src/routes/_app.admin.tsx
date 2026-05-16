@@ -100,9 +100,14 @@ function Admin() {
               const coolie = b.assignedCoolieId ? coolies.find(c => c.id === b.assignedCoolieId) : null;
               return (
                 <div key={b.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-3">
+                    {b.luggagePhoto ? (
+                      <img src={b.luggagePhoto} alt="luggage" className="h-16 w-16 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
+                    ) : (
+                      <div className="h-16 w-16 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-6 w-6" /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xl">{b.passengerAvatar}</span>
                         <span className="font-semibold text-cream">{b.passengerName}</span>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${
@@ -110,6 +115,7 @@ function Admin() {
                           b.status === "assigned" ? "bg-gradient-gold text-maroon" :
                           "bg-blue-600/30 text-blue-200"
                         }`}>{b.status.replace("_", " ")}</span>
+                        <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold">₹{b.fare}</span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-cream/70">
                         <span className="inline-flex items-center gap-1"><Train className="h-3 w-3 text-gold" /> {b.trainNumber}</span>

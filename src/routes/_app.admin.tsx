@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 function Admin() {
-  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, cancelBooking, sosAlerts, clearSOS } = useAppStore();
+  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, cancelBooking, sosAlerts, clearSOS, adminWallet, transactions } = useAppStore();
   const [dispatchFor, setDispatchFor] = useState<string | null>(null);
 
   const pending = coolies.filter(c => c.status === "pending");

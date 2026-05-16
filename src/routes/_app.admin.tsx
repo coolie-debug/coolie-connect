@@ -45,14 +45,17 @@ function Admin() {
         })}
       </AnimatePresence>
 
-      <Panel title="Admin Command Center" icon={<Shield className="h-5 w-5" />}>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <KPI label="Pending Coolies" value={pending.length} icon={<Users className="h-5 w-5" />} />
-          <KPI label="Active Coolies" value={active.length} icon={<CheckCircle2 className="h-5 w-5" />} />
-          <KPI label="Live Bookings" value={activeBookings.length} icon={<Activity className="h-5 w-5" />} />
-          <KPI label="SOS Alerts" value={sosAlerts.length} icon={<AlertOctagon className="h-5 w-5" />} danger={sosAlerts.length > 0} />
-        </div>
-      </Panel>
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <Panel title="Admin Command Center" icon={<Shield className="h-5 w-5" />}>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <KPI label="Pending Coolies" value={pending.length} icon={<Users className="h-5 w-5" />} />
+            <KPI label="Active Coolies" value={active.length} icon={<CheckCircle2 className="h-5 w-5" />} />
+            <KPI label="Live Bookings" value={activeBookings.length} icon={<Activity className="h-5 w-5" />} />
+            <KPI label="SOS Alerts" value={sosAlerts.length} icon={<AlertOctagon className="h-5 w-5" />} danger={sosAlerts.length > 0} />
+          </div>
+        </Panel>
+        <WalletCard title="Platform Revenue" subtitle="20% Commission Hub" balance={adminWallet} badge="ADMIN" />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Onboarding Review Queue" icon={<FileText className="h-5 w-5" />} delay={0.1}>

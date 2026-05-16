@@ -17,7 +17,7 @@ const EARNINGS = [
 ];
 
 function CoolieDashboard() {
-  const { currentCoolieId, coolies, bookings, verifyOtp, completeBooking, triggerSOS, setCurrentCoolie } = useAppStore();
+  const { currentCoolieId, coolies, bookings, verifyOtp, triggerSOS, setCurrentCoolie, coolieWallets, transactions } = useAppStore();
   const me = coolies.find(c => c.id === currentCoolieId) || coolies.find(c => c.status === "active");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");

@@ -120,11 +120,20 @@ function CoolieDashboard() {
                 <Stat icon={<Briefcase className="h-4 w-4" />} label="Service" value={myJob.serviceMode === "bogie" ? "Bogie" : "Platform"} sub="delivery" />
               </div>
 
-              <div className="rounded-xl bg-maroon/40 p-4">
-                <div className="text-xs uppercase tracking-widest text-cream/60 mb-1">Passenger</div>
-                <div className="flex items-center gap-2 text-cream">
-                  <span className="text-2xl">{myJob.passengerAvatar}</span>
-                  <span className="font-semibold">{myJob.passengerName}</span>
+              <div className="rounded-xl bg-maroon/40 p-4 flex gap-3">
+                {myJob.luggagePhoto ? (
+                  <img src={myJob.luggagePhoto} alt="luggage" className="h-24 w-24 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
+                ) : (
+                  <div className="h-24 w-24 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-8 w-8" /></div>
+                )}
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-widest text-cream/60 mb-1">Passenger & Luggage</div>
+                  <div className="flex items-center gap-2 text-cream">
+                    <span className="text-2xl">{myJob.passengerAvatar}</span>
+                    <span className="font-semibold">{myJob.passengerName}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-cream/60">Identify these bags on the ground.</div>
+                  <div className="mt-1 text-xs text-gold">Fare ₹{myJob.fare} · You earn ₹{Math.round(myJob.fare * 0.8)}</div>
                 </div>
               </div>
 
@@ -132,7 +141,7 @@ function CoolieDashboard() {
                 <div className="space-y-3">
                   <div className="text-center">
                     <div className="text-xs uppercase tracking-widest text-cream/60">OTP Handshake</div>
-                    <p className="text-sm text-cream/70 mt-1">Ask passenger for the 4-digit security OTP</p>
+                    <p className="text-sm text-cream/70 mt-1">Enter passenger OTP to verify & complete ride</p>
                   </div>
                   <div className="flex justify-center gap-2">
                     {[0, 1, 2, 3].map(i => (
@@ -149,18 +158,11 @@ function CoolieDashboard() {
                     <button onClick={() => otp.length < 4 && setOtp(otp + "0")} className="rounded-xl border border-gold/30 bg-maroon/40 py-4 font-display text-2xl text-gold hover:bg-maroon/60">0</button>
                     <button onClick={handleVerify} className="rounded-xl bg-gradient-gold py-4 font-bold text-maroon active:scale-95">✓</button>
                   </div>
-                  {error && <p className="text-center text-sm text-destructive">{error}</p>}
-                </div>
-              )}
-
-              {myJob.status === "in_progress" && (
-                <div className="space-y-3 text-center">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-gradient-gold px-4 py-2 text-sm font-bold text-maroon">
-                    <CheckCircle2 className="h-4 w-4" /> OTP VERIFIED · IN PROGRESS
-                  </div>
-                  <button onClick={() => completeBooking(myJob.id)} className="block w-full rounded-2xl bg-gradient-gold py-5 font-display text-2xl font-bold text-maroon glow-gold">
-                    MARK DELIVERED
+                  <button onClick={handleVerify}
+                    className="w-full rounded-xl bg-gradient-gold py-3 font-display text-lg font-bold text-maroon glow-gold">
+                    Verify & Complete Ride
                   </button>
+                  {error && <p className="text-center text-sm text-destructive">{error}</p>}
                 </div>
               )}
             </div>

@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAppStore } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
+import { WalletCard, TransactionLedger } from "@/components/Wallet";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, Bell, IndianRupee, AlertTriangle, CheckCircle2, MapPin, Package, Train } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Briefcase, Bell, IndianRupee, AlertTriangle, CheckCircle2, MapPin, Package, Train, Image as ImageIcon } from "lucide-react";
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_app/coolie/")({

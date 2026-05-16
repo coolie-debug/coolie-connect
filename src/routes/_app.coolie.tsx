@@ -1,5 +1,5 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/coolie")({
-  component: () => <Navigate to="/coolie" />,
+  component: () => <Outlet />,
 });

@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAppStore } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
+import { WalletCard, TransactionLedger } from "@/components/Wallet";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon, Activity, Users, X, Train, MapPin, Ban } from "lucide-react";
+import { Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon, Activity, Users, X, Train, MapPin, Ban, TrendingUp, Image as ImageIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   component: Admin,

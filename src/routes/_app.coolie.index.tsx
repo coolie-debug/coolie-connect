@@ -78,9 +78,8 @@ function CoolieDashboard() {
               <CheckCircle2 className="h-3 w-3" /> BADGE {me.badge}
             </div>
           </div>
-          <div className="mt-5 rounded-xl bg-maroon/40 p-4">
-            <div className="flex items-center gap-2 text-cream/70 text-xs uppercase tracking-widest"><IndianRupee className="h-3 w-3" /> Today's Earnings</div>
-            <div className="font-display text-4xl text-gold">₹{me.earnings.toLocaleString()}</div>
+          <div className="mt-5">
+            <WalletCard title="Partner Wallet" subtitle="80% Earnings Hub" balance={coolieWallets[me.id] || 0} badge="PARTNER" />
           </div>
         </Panel>
 

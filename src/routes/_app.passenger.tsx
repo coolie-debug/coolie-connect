@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useAppStore, STATIONS_LIST } from "@/store/app-store";
+import { useAppStore, STATIONS_LIST, FARE_PER_BAG } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
+import { LuggageCapture } from "@/components/LuggageCapture";
+import { WalletCard, TransactionLedger } from "@/components/Wallet";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, CreditCard, Crown, Train, MapPin, Package, Plus, Minus, ShieldCheck, Sparkles } from "lucide-react";
+import { User, CreditCard, Crown, Train, Package, Plus, Minus, ShieldCheck, Sparkles, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_app/passenger")({
   component: Passenger,
@@ -15,21 +17,26 @@ const TRAINS = [
 ];
 
 function Passenger() {
-  const { passengerProfile, createBooking, bookings, cancelBooking, coolies } = useAppStore();
+  const { passengerProfile, createBooking, bookings, cancelBooking, coolies, passengerWallet, passengerEscrow, addPassengerMoney, transactions } = useAppStore();
   const [form, setForm] = useState({
     trainNumber: TRAINS[0].num, trainName: TRAINS[0].name,
     arrivalStation: STATIONS_LIST[0], departureStation: STATIONS_LIST[1],
     platform: "4", bogie: "B3", luggageCount: 2,
     serviceMode: "bogie" as "platform" | "bogie",
+    luggagePhoto: undefined as string | undefined,
   });
   const [lastBookingId, setLastBookingId] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const lastBooking = bookings.find(b => b.id === lastBookingId);
   const assignedCoolie = lastBooking?.assignedCoolieId ? coolies.find(c => c.id === lastBooking.assignedCoolieId) : null;
+  const fare = form.luggageCount * FARE_PER_BAG;
 
   const submit = () => {
-    const id = createBooking(form);
-    setLastBookingId(id);
+    setBookingError(null);
+    const res = createBooking(form);
+    if (res.error) { setBookingError(res.error); return; }
+    setLastBookingId(res.id);
   };
 
   return (
@@ -53,11 +60,17 @@ function Passenger() {
                 </span>
               ))}
             </div>
+            {passengerEscrow > 0 && (
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-yellow-700/30 px-3 py-1 text-xs text-yellow-200">
+                <Lock className="h-3 w-3" /> ₹{passengerEscrow} locked in escrow
+              </div>
+            )}
           </div>
-          <div className="hidden md:block text-right">
-            <div className="text-xs uppercase tracking-widest text-cream/60">Loyalty Points</div>
-            <div className="font-display text-3xl text-gold">8,420</div>
-          </div>
+          <WalletCard
+            title="Passenger Wallet" subtitle="Yatri Pay Balance"
+            balance={passengerWallet} onTopUp={addPassengerMoney}
+            badge="LIVE"
+          />
         </div>
       </Panel>
 
@@ -94,11 +107,13 @@ function Passenger() {
                 <button onClick={() => setForm({ ...form, luggageCount: Math.max(1, form.luggageCount - 1) })} className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon"><Minus className="h-4 w-4" /></button>
                 <div className="text-center">
                   <div className="font-display text-4xl text-gold leading-none">{form.luggageCount}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-cream/60 mt-1">bags · ₹{form.luggageCount * 80} est.</div>
+                  <div className="text-[10px] uppercase tracking-widest text-cream/60 mt-1">bags · ₹{fare} fare</div>
                 </div>
                 <button onClick={() => setForm({ ...form, luggageCount: Math.min(10, form.luggageCount + 1) })} className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon"><Plus className="h-4 w-4" /></button>
               </div>
             </div>
+
+            <LuggageCapture value={form.luggagePhoto} onChange={(p) => setForm({ ...form, luggagePhoto: p })} />
 
             <div>
               <label className="text-xs uppercase tracking-widest text-cream/60">Service Mode</label>
@@ -112,15 +127,22 @@ function Passenger() {
               </div>
             </div>
 
+            {bookingError && (
+              <div className="rounded-xl border border-red-500/40 bg-red-900/30 p-3 text-sm text-red-200">{bookingError}</div>
+            )}
+
             <button onClick={submit} className="w-full rounded-xl bg-gradient-gold py-4 font-display text-xl font-bold text-maroon glow-gold hover:opacity-95">
-              <Sparkles className="inline h-5 w-5 mr-2" /> Request Coolie
+              <Sparkles className="inline h-5 w-5 mr-2" /> Book Coolie Now · ₹{fare}
             </button>
+            <p className="text-center text-[10px] text-cream/50 uppercase tracking-widest">
+              <Lock className="inline h-3 w-3 mr-1" /> Amount held in escrow until OTP verification
+            </p>
           </div>
         </Panel>
 
         <div className="space-y-6">
           <AnimatePresence>
-            {lastBooking && lastBooking.status !== "pending" && assignedCoolie && (
+            {lastBooking && lastBooking.status !== "pending" && lastBooking.status !== "completed" && assignedCoolie && (
               <motion.div
                 key="otp"
                 initial={{ scale: 0.8, opacity: 0, rotateY: -20 }} animate={{ scale: 1, opacity: 1, rotateY: 0 }} exit={{ opacity: 0 }}
@@ -156,12 +178,13 @@ function Passenger() {
             )}
             <div className="space-y-2">
               {bookings.filter(b => b.passengerName === passengerProfile.name).map(b => (
-                <div key={b.id} className="flex items-center justify-between rounded-xl border border-gold/20 bg-maroon/40 p-3">
-                  <div>
+                <div key={b.id} className="flex items-center gap-3 rounded-xl border border-gold/20 bg-maroon/40 p-3">
+                  {b.luggagePhoto && <img src={b.luggagePhoto} alt="" className="h-12 w-12 rounded-lg object-cover border border-gold/40" />}
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-cream">
                       <Train className="h-4 w-4 text-gold" />
                       <span className="font-semibold">{b.trainNumber}</span>
-                      <span className="text-xs text-cream/60">· Platform {b.platform} · {b.luggageCount} bags</span>
+                      <span className="text-xs text-cream/60">· P{b.platform} · {b.luggageCount} bags · ₹{b.fare}</span>
                     </div>
                     <div className="text-xs text-cream/50 mt-0.5">OTP: <span className="text-gold font-bold">{b.otp}</span></div>
                   </div>
@@ -179,6 +202,10 @@ function Passenger() {
                 </div>
               ))}
             </div>
+          </Panel>
+
+          <Panel title="Wallet Activity" delay={0.4}>
+            <TransactionLedger txns={transactions} perspective="passenger" />
           </Panel>
         </div>
       </div>

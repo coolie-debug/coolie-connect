@@ -2,15 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAppStore } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
+import { WalletCard, TransactionLedger } from "@/components/Wallet";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon, Activity, Users, X, Train, MapPin, Ban } from "lucide-react";
+import { Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon, Activity, Users, X, Train, MapPin, Ban, TrendingUp, Image as ImageIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin")({
   component: Admin,
 });
 
 function Admin() {
-  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, cancelBooking, sosAlerts, clearSOS } = useAppStore();
+  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, cancelBooking, sosAlerts, clearSOS, adminWallet, transactions } = useAppStore();
   const [dispatchFor, setDispatchFor] = useState<string | null>(null);
 
   const pending = coolies.filter(c => c.status === "pending");
@@ -44,14 +45,17 @@ function Admin() {
         })}
       </AnimatePresence>
 
-      <Panel title="Admin Command Center" icon={<Shield className="h-5 w-5" />}>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <KPI label="Pending Coolies" value={pending.length} icon={<Users className="h-5 w-5" />} />
-          <KPI label="Active Coolies" value={active.length} icon={<CheckCircle2 className="h-5 w-5" />} />
-          <KPI label="Live Bookings" value={activeBookings.length} icon={<Activity className="h-5 w-5" />} />
-          <KPI label="SOS Alerts" value={sosAlerts.length} icon={<AlertOctagon className="h-5 w-5" />} danger={sosAlerts.length > 0} />
-        </div>
-      </Panel>
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <Panel title="Admin Command Center" icon={<Shield className="h-5 w-5" />}>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <KPI label="Pending Coolies" value={pending.length} icon={<Users className="h-5 w-5" />} />
+            <KPI label="Active Coolies" value={active.length} icon={<CheckCircle2 className="h-5 w-5" />} />
+            <KPI label="Live Bookings" value={activeBookings.length} icon={<Activity className="h-5 w-5" />} />
+            <KPI label="SOS Alerts" value={sosAlerts.length} icon={<AlertOctagon className="h-5 w-5" />} danger={sosAlerts.length > 0} />
+          </div>
+        </Panel>
+        <WalletCard title="Platform Revenue" subtitle="20% Commission Hub" balance={adminWallet} badge="ADMIN" />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Onboarding Review Queue" icon={<FileText className="h-5 w-5" />} delay={0.1}>
@@ -96,9 +100,14 @@ function Admin() {
               const coolie = b.assignedCoolieId ? coolies.find(c => c.id === b.assignedCoolieId) : null;
               return (
                 <div key={b.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-3">
+                    {b.luggagePhoto ? (
+                      <img src={b.luggagePhoto} alt="luggage" className="h-16 w-16 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
+                    ) : (
+                      <div className="h-16 w-16 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-6 w-6" /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xl">{b.passengerAvatar}</span>
                         <span className="font-semibold text-cream">{b.passengerName}</span>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${
@@ -106,6 +115,7 @@ function Admin() {
                           b.status === "assigned" ? "bg-gradient-gold text-maroon" :
                           "bg-blue-600/30 text-blue-200"
                         }`}>{b.status.replace("_", " ")}</span>
+                        <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold">₹{b.fare}</span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-cream/70">
                         <span className="inline-flex items-center gap-1"><Train className="h-3 w-3 text-gold" /> {b.trainNumber}</span>
@@ -159,6 +169,10 @@ function Admin() {
         </div>
       </Panel>
 
+      <Panel title="Platform Revenue Ledger" icon={<TrendingUp className="h-5 w-5" />} delay={0.4}>
+        <TransactionLedger txns={transactions} perspective="admin" />
+      </Panel>
+
       <AnimatePresence>
         {dispatchFor && dispatchBooking && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -173,9 +187,17 @@ function Admin() {
                 <h3 className="font-display text-2xl text-gold">Smart Dispatch</h3>
                 <button onClick={() => setDispatchFor(null)} className="text-cream/60 hover:text-cream"><X className="h-5 w-5" /></button>
               </div>
-              <div className="rounded-xl bg-maroon/40 p-3 mb-4 text-sm text-cream">
-                <div className="text-gold">Train {dispatchBooking.trainNumber} · Platform {dispatchBooking.platform}</div>
-                <div className="text-xs text-cream/70">{dispatchBooking.arrivalStation} · {dispatchBooking.luggageCount} bags</div>
+              <div className="rounded-xl bg-maroon/40 p-3 mb-4 flex gap-3">
+                {dispatchBooking.luggagePhoto ? (
+                  <img src={dispatchBooking.luggagePhoto} alt="luggage" className="h-20 w-20 rounded-lg object-cover border border-gold/40" />
+                ) : (
+                  <div className="h-20 w-20 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40"><ImageIcon className="h-7 w-7" /></div>
+                )}
+                <div className="text-sm text-cream flex-1">
+                  <div className="text-gold">Train {dispatchBooking.trainNumber} · Platform {dispatchBooking.platform}</div>
+                  <div className="text-xs text-cream/70">{dispatchBooking.arrivalStation}</div>
+                  <div className="text-xs text-cream/70">{dispatchBooking.luggageCount} bags · ₹{dispatchBooking.fare}</div>
+                </div>
               </div>
               <p className="text-xs uppercase tracking-widest text-cream/60 mb-2">Available coolies at this station</p>
               {eligibleCoolies.length === 0 && <p className="text-sm text-cream/60 py-4 text-center">No available coolies at this station.</p>}

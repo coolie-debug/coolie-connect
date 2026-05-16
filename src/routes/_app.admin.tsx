@@ -183,9 +183,17 @@ function Admin() {
                 <h3 className="font-display text-2xl text-gold">Smart Dispatch</h3>
                 <button onClick={() => setDispatchFor(null)} className="text-cream/60 hover:text-cream"><X className="h-5 w-5" /></button>
               </div>
-              <div className="rounded-xl bg-maroon/40 p-3 mb-4 text-sm text-cream">
-                <div className="text-gold">Train {dispatchBooking.trainNumber} · Platform {dispatchBooking.platform}</div>
-                <div className="text-xs text-cream/70">{dispatchBooking.arrivalStation} · {dispatchBooking.luggageCount} bags</div>
+              <div className="rounded-xl bg-maroon/40 p-3 mb-4 flex gap-3">
+                {dispatchBooking.luggagePhoto ? (
+                  <img src={dispatchBooking.luggagePhoto} alt="luggage" className="h-20 w-20 rounded-lg object-cover border border-gold/40" />
+                ) : (
+                  <div className="h-20 w-20 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40"><ImageIcon className="h-7 w-7" /></div>
+                )}
+                <div className="text-sm text-cream flex-1">
+                  <div className="text-gold">Train {dispatchBooking.trainNumber} · Platform {dispatchBooking.platform}</div>
+                  <div className="text-xs text-cream/70">{dispatchBooking.arrivalStation}</div>
+                  <div className="text-xs text-cream/70">{dispatchBooking.luggageCount} bags · ₹{dispatchBooking.fare}</div>
+                </div>
               </div>
               <p className="text-xs uppercase tracking-widest text-cream/60 mb-2">Available coolies at this station</p>
               {eligibleCoolies.length === 0 && <p className="text-sm text-cream/60 py-4 text-center">No available coolies at this station.</p>}

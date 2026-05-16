@@ -1,0 +1,34 @@
+Update the "Coolie Mitr" React Vite application with advanced peer-to-peer booking workflows, sound notifications, dynamic states, and a bilingual logo. Maintain the strict Royal Maroon, Burnished Gold, and Cream isometric design system.
+
+IMPLEMENT THE FOLLOWING FEATUES AND LOGIC:
+
+1. BILINGUAL BRANDING & LOGO:
+- In the main navbar, implement a beautiful custom logo text: "COOLIE मित्र" 
+- "COOLIE" must be in bold, modern English typography (Burnished Gold).
+- "मित्र" must be elegantly written in clean Hindi script (Cream/White color).
+- Include a small premium golden porter badge icon next to the text.
+
+2. DYNAMIC LIVE SEARCHING & PORTER SELECTION (Passenger Side):
+- When a passenger clicks "Book Coolie Now", instead of instant assignment, show a stunning "Searching for Nearby Porters..." radar animation screen. Use CSS or Framer Motion for a glowing pulse/sonar wave effect in Maroon/Gold tones.
+- Below the animation, dynamically display a list of "Available Porters at this Station". Each coolie card must display: Name, Profile Photo, Unique Coolie ID (Badge Number), and the fixed Admin Support Number: 7080809908.
+- Allow the Passenger to manually click a "Select This Porter" button on whichever coolie they prefer.
+
+3. REAL-TIME SOUND ALERTS & CO-DISPATCH (Admin & Coolie Side):
+- As soon as the passenger selects a coolie, that specific coolie’s dashboard and the Admin control panel must instantly flash with a "Incoming Request Alert".
+- Trigger a mock audio alert sound effect (using HTML5 Audio API with a clean royalty-free beep/chime notification sound) on both the Coolie and Admin screens when the request arrives.
+- Tri-Party Actions: 
+  * Coolie can: Accept or Reject/Cancel the incoming request.
+  * Admin can: Overrule and Accept, Reject, or Cancel the request from their God-Mode panel at any time.
+  * Passenger can: Cancel the search or cancel the booking post-confirmation.
+
+4. GROUND-LEVEL MUTUAL CANCELLATION SYSTEM:
+- If the Coolie reaches the passenger's coach/platform and a dispute happens or the deal falls through, provide a prominent "Cancel Deal" button on BOTH the Passenger and Coolie dashboards.
+- Clicking this instantly terminates the active state, unlocks the escrowed wallet balance back to the passenger, and updates the booking status across all panels to "Cancelled by Passenger/Porter".
+
+5. COMPREHENSIVE TRIP HISTORY LEDGER (Passenger & Coolie Views):
+Categorize the booking history section into 3 clean, interactive tabs/tables using the premium cream design layout:
+- Tab 1: Current Booking (Shows active ride, luggage photo preview, designated Coolie/Passenger details, Secure OTP, and the 7080809908 Admin help number).
+- Tab 2: Upcoming Bookings (Scheduled rides for later trains/dates).
+- Tab 3: Total/Past Bookings (All completed or cancelled historical logs with exact fare breakdowns and 20/80 wallet deduction metrics).
+
+Ensure all actions are wired to update the state reactively, and make sure the sound triggers properly on state change events.

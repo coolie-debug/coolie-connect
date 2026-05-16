@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export type Role = "passenger" | "coolie" | "admin";
 export type CoolieStatus = "pending" | "active" | "rejected";
-export type BookingStatus = "pending" | "assigned" | "in_progress" | "completed" | "cancelled";
+export type BookingStatus = "pending" | "requested" | "assigned" | "in_progress" | "completed" | "cancelled";
 
 export const FARE_PER_BAG = 100;
 export const ADMIN_CUT = 0.2;
@@ -161,8 +161,11 @@ interface AppState {
 
   // Booking management
   createBooking: (b: Omit<Booking, "id" | "status" | "otp" | "createdAt" | "passengerName" | "passengerAvatar" | "fare">) => Promise<{ id: string; error?: string }>;
+  bookWithCoolie: (b: Omit<Booking, "id" | "status" | "otp" | "createdAt" | "passengerName" | "passengerAvatar" | "fare">, coolieId: string) => Promise<{ id: string; error?: string }>;
   assignBooking: (bookingId: string, coolieId: string) => Promise<void>;
-  cancelBooking: (id: string) => Promise<void>;
+  acceptBooking: (bookingId: string) => Promise<void>;
+  rejectBooking: (bookingId: string) => Promise<void>;
+  cancelBooking: (id: string, by?: "passenger" | "coolie" | "admin") => Promise<void>;
   verifyOtp: (bookingId: string, otp: string) => Promise<boolean>;
   completeBooking: (id: string) => Promise<void>;
 
@@ -402,6 +405,51 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     if (bErr) console.warn("createBooking DB error:", bErr.message);
     return { id };
+  },
+
+  // ── Book with pre-selected Coolie (passenger flow) ────────────────────────
+  bookWithCoolie: async (b, coolieId) => {
+    const fare = b.luggageCount * FARE_PER_BAG;
+    const { passengerWallet, passengerProfile } = get();
+    if (passengerWallet < fare) {
+      return { id: "", error: `Insufficient wallet balance. Need ₹${fare}, have ₹${passengerWallet}.` };
+    }
+    const id = uid();
+    const otp = genOtp();
+    const booking: Booking = {
+      ...b, id, status: "requested", otp, createdAt: Date.now(), fare,
+      passengerName: passengerProfile.name, passengerAvatar: passengerProfile.avatar,
+      assignedCoolieId: coolieId,
+    };
+    set((s) => ({
+      bookings: [booking, ...s.bookings],
+      passengerWallet: s.passengerWallet - fare,
+      passengerEscrow: s.passengerEscrow + fare,
+      transactions: [{ id: uid(), tripId: id.slice(0, 4).toUpperCase(), time: Date.now(), total: fare, adminShare: 0, coolieShare: 0, passengerName: passengerProfile.name, type: "escrow" }, ...s.transactions],
+    }));
+    await supabase.from("bookings").insert({
+      id, passenger_id: "passenger-priya", passenger_name: passengerProfile.name,
+      passenger_avatar: passengerProfile.avatar, train_number: b.trainNumber, train_name: b.trainName,
+      arrival_station: b.arrivalStation, departure_station: b.departureStation, platform: b.platform,
+      bogie: b.bogie, luggage_count: b.luggageCount, service_mode: b.serviceMode,
+      status: "requested", otp, fare, assigned_coolie_id: coolieId,
+      luggage_photo_url: b.luggagePhoto ?? null,
+    });
+    await supabase.from("transactions").insert({ id: uid(), trip_id: id.slice(0, 4).toUpperCase(), booking_id: id, passenger_id: "passenger-priya", passenger_name: passengerProfile.name, total: fare, admin_share: 0, coolie_share: 0, type: "escrow" });
+    await supabase.from("profiles").update({ wallet_balance: get().passengerWallet, escrow_balance: get().passengerEscrow }).eq("id", "passenger-priya");
+    return { id };
+  },
+
+  // ── Coolie Accepts Booking ─────────────────────────────────────────────────
+  acceptBooking: async (bookingId) => {
+    set((s) => ({ bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: "assigned" } : b) }));
+    await supabase.from("bookings").update({ status: "assigned" }).eq("id", bookingId);
+  },
+
+  // ── Coolie Rejects Booking ─────────────────────────────────────────────────
+  rejectBooking: async (bookingId) => {
+    set((s) => ({ bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: "pending", assignedCoolieId: undefined } : b) }));
+    await supabase.from("bookings").update({ status: "pending", assigned_coolie_id: null }).eq("id", bookingId);
   },
 
   // ── Assign Booking ─────────────────────────────────────────────────────────

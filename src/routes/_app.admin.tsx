@@ -1,28 +1,58 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
 import { WalletCard, TransactionLedger } from "@/components/Wallet";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon, Activity, Users, X, Train, MapPin, Ban, TrendingUp, Image as ImageIcon } from "lucide-react";
+import { playNewJobChime, playAlertBeep, playCancelTone } from "@/lib/sound";
+import {
+  Shield, CheckCircle2, XCircle, FileText, Send, AlertOctagon,
+  Activity, Users, X, Train, MapPin, Ban, TrendingUp, Image as ImageIcon, Phone,
+} from "lucide-react";
 
-export const Route = createFileRoute("/_app/admin")({
-  component: Admin,
-});
+export const Route = createFileRoute("/_app/admin")({ component: Admin });
 
 function Admin() {
-  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, cancelBooking, sosAlerts, clearSOS, adminWallet, transactions } = useAppStore();
+  const { coolies, bookings, approveCoolie, rejectCoolie, assignBooking, acceptBooking, cancelBooking, sosAlerts, clearSOS, adminWallet, transactions } = useAppStore();
   const [dispatchFor, setDispatchFor] = useState<string | null>(null);
 
   const pending = coolies.filter(c => c.status === "pending");
   const active = coolies.filter(c => c.status === "active");
-  const activeBookings = bookings.filter(b => b.status !== "completed" && b.status !== "cancelled");
+  const activeBookings = bookings.filter(b => !["completed", "cancelled"].includes(b.status));
+  const requestedBookings = activeBookings.filter(b => b.status === "requested");
+
+  // ── Sound: chime on new "requested" booking ──────────────────────────────
+  const prevRequestedCount = useRef(requestedBookings.length);
+  useEffect(() => {
+    if (requestedBookings.length > prevRequestedCount.current) {
+      playNewJobChime();
+    }
+    prevRequestedCount.current = requestedBookings.length;
+  }, [requestedBookings.length]);
 
   const dispatchBooking = dispatchFor ? bookings.find(b => b.id === dispatchFor) : null;
-  const eligibleCoolies = dispatchBooking ? active.filter(c => c.available && c.station === dispatchBooking.arrivalStation) : [];
+  const eligibleCoolies = dispatchBooking
+    ? active.filter(c => c.available && c.station === dispatchBooking.arrivalStation)
+    : [];
+
+  const handleOverruleAccept = async (bookingId: string, coolieId: string) => {
+    await acceptBooking(bookingId);
+    // if coolie changed, update
+    if (dispatchBooking?.assignedCoolieId !== coolieId) {
+      await assignBooking(bookingId, coolieId);
+    }
+    setDispatchFor(null);
+  };
+
+  const handleCancel = async (id: string) => {
+    playCancelTone();
+    await cancelBooking(id, "admin");
+  };
 
   return (
     <div className="space-y-6">
+
+      {/* ── SOS Alerts ──────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {sosAlerts.map(a => {
           const c = coolies.find(x => x.id === a.coolieId);
@@ -38,13 +68,17 @@ function Admin() {
                     <div className="text-xs text-red-200">At {c?.station} · {new Date(a.time).toLocaleTimeString()}</div>
                   </div>
                 </div>
-                <button onClick={() => clearSOS(a.id)} className="rounded-full bg-white/20 p-2 text-white hover:bg-white/30"><X className="h-4 w-4" /></button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-red-200 font-mono">☎ 7080809908</span>
+                  <button onClick={() => clearSOS(a.id)} className="rounded-full bg-white/20 p-2 text-white hover:bg-white/30"><X className="h-4 w-4" /></button>
+                </div>
               </div>
             </motion.div>
           );
         })}
       </AnimatePresence>
 
+      {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <Panel title="Admin Command Center" icon={<Shield className="h-5 w-5" />}>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -53,11 +87,71 @@ function Admin() {
             <KPI label="Live Bookings" value={activeBookings.length} icon={<Activity className="h-5 w-5" />} />
             <KPI label="SOS Alerts" value={sosAlerts.length} icon={<AlertOctagon className="h-5 w-5" />} danger={sosAlerts.length > 0} />
           </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-cream/50">
+            <Phone className="h-3 w-3 text-gold/50" /> Admin Support Line: <span className="font-mono text-gold/70 ml-1">7080809908</span>
+          </div>
         </Panel>
         <WalletCard title="Platform Revenue" subtitle="20% Commission Hub" balance={adminWallet} badge="ADMIN" />
       </div>
 
+      {/* ── Incoming Requests (passenger-selected porter) ──────────────────── */}
+      {requestedBookings.length > 0 && (
+        <Panel title="Incoming Requests — Awaiting Coolie Acceptance" icon={<AlertOctagon className="h-5 w-5" />} glow>
+          <div className="space-y-3">
+            {requestedBookings.map(b => {
+              const coolie = b.assignedCoolieId ? coolies.find(c => c.id === b.assignedCoolieId) : null;
+              return (
+                <motion.div key={b.id}
+                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                  className="rounded-xl border border-gold/40 bg-maroon/50 p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    {b.luggagePhoto
+                      ? <img src={b.luggagePhoto} alt="luggage" className="h-16 w-16 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
+                      : <div className="h-16 w-16 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-6 w-6" /></div>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xl">{b.passengerAvatar}</span>
+                        <span className="font-semibold text-cream">{b.passengerName}</span>
+                        <span className="rounded-full bg-yellow-600/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-yellow-200">Awaiting acceptance</span>
+                        <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold">₹{b.fare}</span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-cream/70">
+                        <span className="inline-flex items-center gap-1"><Train className="h-3 w-3 text-gold" /> {b.trainNumber}</span>
+                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-gold" /> P{b.platform}/{b.bogie}</span>
+                        <span>{b.luggageCount} bags</span>
+                      </div>
+                      {coolie && (
+                        <div className="mt-1 text-xs text-gold">
+                          ↳ Selected: {coolie.avatar} {coolie.name} ({coolie.badge})
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    {/* Overrule: Admin force-accept */}
+                    <button onClick={() => { acceptBooking(b.id); }}
+                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-gradient-gold py-2 text-sm font-semibold text-maroon glow-gold">
+                      <Send className="h-4 w-4" /> Overrule — Force Accept
+                    </button>
+                    <button onClick={() => setDispatchFor(b.id)}
+                      className="rounded-lg border border-gold/40 px-4 py-2 text-sm text-gold hover:bg-maroon/60">
+                      Re-Assign Porter
+                    </button>
+                    <button onClick={() => handleCancel(b.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-900/30 px-3 py-2 text-sm text-red-200 hover:bg-red-900/50">
+                      <Ban className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </Panel>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* ── Onboarding Queue ──────────────────────────────────────────────── */}
         <Panel title="Onboarding Review Queue" icon={<FileText className="h-5 w-5" />} delay={0.1}>
           {pending.length === 0 && <p className="text-cream/60 text-sm">No pending applications.</p>}
           <div className="space-y-3">
@@ -81,10 +175,12 @@ function Admin() {
                   </div>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button onClick={() => approveCoolie(c.id)} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-gradient-gold py-2 text-sm font-semibold text-maroon">
+                  <button onClick={() => approveCoolie(c.id)}
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-gradient-gold py-2 text-sm font-semibold text-maroon">
                     <CheckCircle2 className="h-4 w-4" /> Approve
                   </button>
-                  <button onClick={() => rejectCoolie(c.id)} className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-500/50 bg-red-900/40 px-4 py-2 text-sm text-red-200 hover:bg-red-900/60">
+                  <button onClick={() => rejectCoolie(c.id)}
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-500/50 bg-red-900/40 px-4 py-2 text-sm text-red-200 hover:bg-red-900/60">
                     <XCircle className="h-4 w-4" /> Reject
                   </button>
                 </div>
@@ -93,6 +189,7 @@ function Admin() {
           </div>
         </Panel>
 
+        {/* ── Live Booking Feed ─────────────────────────────────────────────── */}
         <Panel title="Live Luggage Booking Feed" icon={<Activity className="h-5 w-5" />} delay={0.2}>
           {activeBookings.length === 0 && <p className="text-cream/60 text-sm">No active bookings.</p>}
           <div className="space-y-3">
@@ -101,20 +198,14 @@ function Admin() {
               return (
                 <div key={b.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-4">
                   <div className="flex items-start gap-3">
-                    {b.luggagePhoto ? (
-                      <img src={b.luggagePhoto} alt="luggage" className="h-16 w-16 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
-                    ) : (
-                      <div className="h-16 w-16 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-6 w-6" /></div>
-                    )}
+                    {b.luggagePhoto
+                      ? <img src={b.luggagePhoto} alt="luggage" className="h-16 w-16 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
+                      : <div className="h-16 w-16 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-6 w-6" /></div>}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xl">{b.passengerAvatar}</span>
                         <span className="font-semibold text-cream">{b.passengerName}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${
-                          b.status === "pending" ? "bg-yellow-600/30 text-yellow-200" :
-                          b.status === "assigned" ? "bg-gradient-gold text-maroon" :
-                          "bg-blue-600/30 text-blue-200"
-                        }`}>{b.status.replace("_", " ")}</span>
+                        <StatusBadge status={b.status} />
                         <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold">₹{b.fare}</span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-cream/70">
@@ -126,15 +217,18 @@ function Admin() {
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2">
-                    {b.status === "pending" && (
-                      <button onClick={() => setDispatchFor(b.id)} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-gradient-gold py-2 text-sm font-semibold text-maroon glow-gold">
-                        <Send className="h-4 w-4" /> Transfer Job
+                    {(b.status === "pending" || b.status === "requested") && (
+                      <button onClick={() => setDispatchFor(b.id)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-gradient-gold py-2 text-sm font-semibold text-maroon glow-gold">
+                        <Send className="h-4 w-4" /> {b.status === "requested" ? "Override Coolie" : "Assign Coolie"}
                       </button>
                     )}
                     {b.status === "assigned" && (
-                      <button onClick={() => setDispatchFor(b.id)} className="flex-1 rounded-lg border border-gold/40 py-2 text-sm text-gold hover:bg-maroon/60">Override Allocation</button>
+                      <button onClick={() => setDispatchFor(b.id)}
+                        className="flex-1 rounded-lg border border-gold/40 py-2 text-sm text-gold hover:bg-maroon/60">Override Allocation</button>
                     )}
-                    <button onClick={() => cancelBooking(b.id)} className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-900/30 px-3 py-2 text-sm text-red-200 hover:bg-red-900/50">
+                    <button onClick={() => handleCancel(b.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-900/30 px-3 py-2 text-sm text-red-200 hover:bg-red-900/50">
                       <Ban className="h-4 w-4" />
                     </button>
                   </div>
@@ -145,10 +239,11 @@ function Admin() {
         </Panel>
       </div>
 
+      {/* ── Active Coolies ───────────────────────────────────────────────────── */}
       <Panel title="Active Coolies (God Mode)" icon={<Users className="h-5 w-5" />} delay={0.3}>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {active.map(c => {
-            const job = bookings.find(b => b.assignedCoolieId === c.id && (b.status === "assigned" || b.status === "in_progress"));
+            const job = bookings.find(b => b.assignedCoolieId === c.id && ["requested", "assigned", "in_progress"].includes(b.status));
             return (
               <div key={c.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-3">
                 <div className="flex items-center gap-3">
@@ -160,7 +255,7 @@ function Admin() {
                   <span className={`h-3 w-3 rounded-full ${c.available ? "bg-green-400 shadow-[0_0_10px_oklch(0.7_0.2_140)]" : "bg-yellow-400"}`} />
                 </div>
                 <div className="mt-2 text-xs text-cream/70">
-                  {job ? <>On job: <span className="text-gold">Train {job.trainNumber}</span></> : <span className="text-green-300">Available</span>}
+                  {job ? <>On job: <span className="text-gold">Train {job.trainNumber}</span> <StatusBadge status={job.status} /></> : <span className="text-green-300">Available</span>}
                 </div>
                 <div className="text-xs text-cream/60 mt-1">Earnings: <span className="text-gold">₹{c.earnings}</span></div>
               </div>
@@ -169,47 +264,48 @@ function Admin() {
         </div>
       </Panel>
 
+      {/* ── Revenue Ledger ───────────────────────────────────────────────────── */}
       <Panel title="Platform Revenue Ledger" icon={<TrendingUp className="h-5 w-5" />} delay={0.4}>
         <TransactionLedger txns={transactions} perspective="admin" />
       </Panel>
 
+      {/* ── Dispatch Modal ───────────────────────────────────────────────────── */}
       <AnimatePresence>
         {dispatchFor && dispatchBooking && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={() => setDispatchFor(null)}
-          >
+            onClick={() => setDispatchFor(null)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="glass-gold w-full max-w-lg p-6"
-            >
+              className="glass-gold w-full max-w-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display text-2xl text-gold">Smart Dispatch</h3>
                 <button onClick={() => setDispatchFor(null)} className="text-cream/60 hover:text-cream"><X className="h-5 w-5" /></button>
               </div>
               <div className="rounded-xl bg-maroon/40 p-3 mb-4 flex gap-3">
-                {dispatchBooking.luggagePhoto ? (
-                  <img src={dispatchBooking.luggagePhoto} alt="luggage" className="h-20 w-20 rounded-lg object-cover border border-gold/40" />
-                ) : (
-                  <div className="h-20 w-20 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40"><ImageIcon className="h-7 w-7" /></div>
-                )}
+                {dispatchBooking.luggagePhoto
+                  ? <img src={dispatchBooking.luggagePhoto} alt="luggage" className="h-20 w-20 rounded-lg object-cover border border-gold/40" />
+                  : <div className="h-20 w-20 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40"><ImageIcon className="h-7 w-7" /></div>}
                 <div className="text-sm text-cream flex-1">
                   <div className="text-gold">Train {dispatchBooking.trainNumber} · Platform {dispatchBooking.platform}</div>
                   <div className="text-xs text-cream/70">{dispatchBooking.arrivalStation}</div>
                   <div className="text-xs text-cream/70">{dispatchBooking.luggageCount} bags · ₹{dispatchBooking.fare}</div>
+                  {dispatchBooking.status === "requested" && (
+                    <div className="text-xs text-yellow-300 mt-1">Passenger selected a coolie — override below</div>
+                  )}
                 </div>
               </div>
               <p className="text-xs uppercase tracking-widest text-cream/60 mb-2">Available coolies at this station</p>
               {eligibleCoolies.length === 0 && <p className="text-sm text-cream/60 py-4 text-center">No available coolies at this station.</p>}
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {eligibleCoolies.map(c => (
-                  <button key={c.id} onClick={() => { assignBooking(dispatchBooking.id, c.id); setDispatchFor(null); }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-gold/30 bg-maroon/40 p-3 text-left transition hover:border-gold hover:bg-maroon/60"
-                  >
+                  <button key={c.id}
+                    onClick={() => handleOverruleAccept(dispatchBooking.id, c.id)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-gold/30 bg-maroon/40 p-3 text-left transition hover:border-gold hover:bg-maroon/60">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-gold text-2xl">{c.avatar}</div>
                     <div className="flex-1">
                       <div className="font-semibold text-cream">{c.name}</div>
-                      <div className="text-xs text-cream/60">{c.badge} · ₹{c.earnings} today</div>
+                      <div className="text-xs text-cream/60">{c.badge} · ₹{c.earnings} earned</div>
                     </div>
                     <Send className="h-4 w-4 text-gold" />
                   </button>
@@ -220,6 +316,22 @@ function Admin() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    requested: "bg-yellow-600/30 text-yellow-200",
+    pending: "bg-maroon/60 text-gold",
+    assigned: "bg-gradient-gold text-maroon",
+    in_progress: "bg-blue-600/30 text-blue-200",
+    completed: "bg-green-700/40 text-green-200",
+    cancelled: "bg-red-700/40 text-red-200",
+  };
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${map[status] ?? "bg-maroon/60 text-cream"}`}>
+      {status.replace("_", " ")}
+    </span>
   );
 }
 

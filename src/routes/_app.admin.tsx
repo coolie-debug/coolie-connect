@@ -169,6 +169,10 @@ function Admin() {
         </div>
       </Panel>
 
+      <Panel title="Platform Revenue Ledger" icon={<TrendingUp className="h-5 w-5" />} delay={0.4}>
+        <TransactionLedger txns={transactions} perspective="admin" />
+      </Panel>
+
       <AnimatePresence>
         {dispatchFor && dispatchBooking && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

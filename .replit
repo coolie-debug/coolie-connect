@@ -5,6 +5,7 @@ stack = "BEST_EFFORT_FALLBACK"
 
 [nix]
 channel = "stable-25_05"
+packages = ["psmisc"]
 
 [workflows]
 runButton = "Project"
@@ -22,13 +23,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "bun run dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "ulimit -n 65536 2>/dev/null || true; bun run dev"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
@@ -36,5 +37,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bun", "run", "preview"]
 build = ["bun", "run", "build"]
+run = ["bun", "run", "preview"]

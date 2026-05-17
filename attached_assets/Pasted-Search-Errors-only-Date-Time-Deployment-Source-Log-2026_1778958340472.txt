@@ -1,0 +1,105 @@
+Search
+
+
+Errors only
+
+Date
+Time
+Deployment
+Source
+Log
+2026-05-17 00:08:01.03
+8c20f929
+User
+$ vite preview
+2026-05-17 00:33:53.96
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:55.59
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:57.19
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:57.51
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:58.22
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:59.15
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:33:59.70
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:00.04
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:01.20
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:01.73
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:03.55
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:04.83
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:05.20
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:06.23
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:06.51
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:07.93
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:09.16
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:10.48
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+
+2026-05-17 00:34:12.39
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:13.78
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:14.33
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+2026-05-17 00:34:15.50
+3dc82735
+User
+ResolveMessage: Cannot find module '/home/runner/workspace/dist/server/server.js' from '/home/runner/workspace/node_modules/@tanstack/start-plugin-core/dist/esm/vite/preview-server-plugin/plugin.js'
+
+Colla

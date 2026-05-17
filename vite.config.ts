@@ -18,12 +18,23 @@ export default defineConfig({
       port: 5000,
       strictPort: true,
       allowedHosts: true,
+      watch: {
+        ignored: [
+          "**/.cache/**",
+          "**/dist/**",
+          "**/.git/**",
+          "**/.local/state/**",
+        ],
+      },
     },
     preview: {
       host: "0.0.0.0",
       port: 5000,
       strictPort: true,
       allowedHosts: true,
+    },
+    optimizeDeps: {
+      force: false,
     },
   },
 });

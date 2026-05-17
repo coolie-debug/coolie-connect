@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { playNewJobChime, playSuccessChime, playCancelTone } from "@/lib/sound";
 import {
   Briefcase, Bell, IndianRupee, AlertTriangle, CheckCircle2,
-  MapPin, Package, Train, Image as ImageIcon, XCircle, Phone,
+  MapPin, Package, Train, Image as ImageIcon, XCircle, Phone, Loader2,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
@@ -22,26 +22,29 @@ function CoolieDashboard() {
   const {
     currentCoolieId, coolies, bookings, verifyOtp, triggerSOS,
     setCurrentCoolie, coolieWallets, transactions,
-    acceptBooking, rejectBooking, cancelBooking,
+    acceptBooking, rejectBooking, cancelBooking, setCustomFare,
   } = useAppStore();
 
   const me = coolies.find(c => c.id === currentCoolieId) || coolies.find(c => c.status === "active");
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [customFareInput, setCustomFareInput] = useState("");
+  const [savingFare, setSavingFare] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   if (!currentCoolieId && me) setTimeout(() => setCurrentCoolie(me.id), 0);
 
-  // ── Incoming request (passenger selected this coolie, status "requested") ──
   const incomingRequest = me
     ? bookings.find(b => b.assignedCoolieId === me.id && b.status === "requested")
     : undefined;
 
-  // ── Active job (accepted) ────────────────────────────────────────────────
   const myJob = me
     ? bookings.find(b => b.assignedCoolieId === me.id && ["assigned", "in_progress"].includes(b.status))
     : undefined;
 
-  // ── Sound: chime when a new request arrives ──────────────────────────────
+  // ── Sound on new request ─────────────────────────────────────────────────
   const prevRequestId = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (incomingRequest && incomingRequest.id !== prevRequestId.current) {
@@ -50,38 +53,52 @@ function CoolieDashboard() {
     prevRequestId.current = incomingRequest?.id;
   }, [incomingRequest?.id]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleAccept = async () => {
     if (!incomingRequest) return;
-    playSuccessChime();
+    setAccepting(true);
     await acceptBooking(incomingRequest.id);
+    playSuccessChime();
+    setAccepting(false);
   };
 
   const handleReject = async () => {
     if (!incomingRequest) return;
+    setRejecting(true);
     playCancelTone();
     await rejectBooking(incomingRequest.id);
+    setRejecting(false);
   };
 
   const handleCancelDeal = async () => {
     if (!myJob) return;
+    setCancelling(true);
     playCancelTone();
     await cancelBooking(myJob.id, "coolie");
+    setCancelling(false);
   };
 
   const handleVerify = async () => {
     if (!myJob) return;
-    if (otp.length !== 4) { setError("Enter all 4 digits"); return; }
+    if (otp.length !== 4) { setOtpError("Enter all 4 digits"); return; }
     const ok = await verifyOtp(myJob.id, otp);
-    if (!ok) setError("Incorrect OTP — ask passenger again");
-    else { setError(""); setOtp(""); playSuccessChime(); }
+    if (!ok) setOtpError("Incorrect OTP — ask passenger again");
+    else { setOtpError(""); setOtp(""); playSuccessChime(); }
   };
 
-  // ── Guards ────────────────────────────────────────────────────────────────
+  const handleSaveFare = async () => {
+    if (!myJob) return;
+    const amount = Number(customFareInput);
+    if (!amount || amount < 1) return;
+    setSavingFare(true);
+    await setCustomFare(myJob.id, amount);
+    setCustomFareInput("");
+    setSavingFare(false);
+  };
+
   if (!me) {
     return (
-      <Panel title="Porter Terminal">
-        <p className="text-cream/70 mb-4">No active coolie account selected.</p>
+      <Panel title="Coolie Section">
+        <p className="text-cream/70 mb-4">No active coolie account. Register first.</p>
         <Link to="/coolie/onboard" className="inline-flex rounded-xl bg-gradient-gold px-5 py-3 font-semibold text-maroon">Register as Coolie</Link>
       </Panel>
     );
@@ -89,61 +106,44 @@ function CoolieDashboard() {
   if (me.status === "pending") {
     return (
       <Panel title="Awaiting Approval" glow>
-        <p className="text-cream/80">Your registration is under review. Switch to <strong className="text-gold">Admin</strong> role to approve yourself for testing.</p>
+        <p className="text-cream/80">Your registration is under admin review. Switch to <strong className="text-gold">Admin Section</strong> (password: ADMIN@2026) to approve.</p>
       </Panel>
     );
   }
 
+  const effectiveFare = myJob ? (myJob.customFare ?? myJob.fare) : 0;
+
   return (
     <div className="space-y-6">
 
-      {/* ── INCOMING REQUEST ALERT ──────────────────────────────────────────── */}
+      {/* ── Incoming Request Alert ───────────────────────────────────────── */}
       <AnimatePresence>
         {incomingRequest && (
-          <motion.div
-            key="incoming"
-            initial={{ y: -60, opacity: 0, scale: 0.96 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: -40, opacity: 0 }}
+          <motion.div key="incoming" initial={{ y: -60, opacity: 0, scale: 0.96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -40, opacity: 0 }}
             transition={{ type: "spring", duration: 0.55 }}
-            className="relative overflow-hidden rounded-2xl border-2 border-gold bg-gradient-to-r from-maroon/90 to-maroon/70 p-5"
-          >
-            {/* Pulse rings */}
+            className="relative overflow-hidden rounded-2xl border-2 border-gold bg-gradient-to-r from-maroon/90 to-maroon/70 p-5">
             {[0, 1].map(i => (
-              <motion.div key={i}
-                className="absolute inset-0 rounded-2xl border-2 border-gold/60"
+              <motion.div key={i} className="absolute inset-0 rounded-2xl border-2 border-gold/60"
                 animate={{ scale: [1, 1.04, 1], opacity: [0.8, 0, 0.8] }}
-                transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.6 }}
-              />
+                transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.6 }} />
             ))}
             <div className="relative flex items-start gap-4">
-              <motion.div
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-gold shadow-[0_0_30px_oklch(0.78_0.14_75/0.7)]"
-              >
+              <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.8, repeat: Infinity }}
+                className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-gold shadow-[0_0_30px_oklch(0.78_0.14_75/0.7)]">
                 <Bell className="h-8 w-8 text-maroon" />
               </motion.div>
               <div className="flex-1 min-w-0">
-                <div className="font-display text-2xl font-bold text-gold">
-                  🔔 Incoming Request!
-                </div>
+                <div className="font-display text-2xl font-bold text-gold">🔔 Incoming Request!</div>
                 <div className="mt-1 flex flex-wrap gap-3 text-sm text-cream/90">
-                  <span className="inline-flex items-center gap-1">
-                    <Train className="h-3.5 w-3.5 text-gold" /> Train {incomingRequest.trainNumber}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-gold" /> Platform {incomingRequest.platform} · {incomingRequest.bogie}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Package className="h-3.5 w-3.5 text-gold" /> {incomingRequest.luggageCount} bags
-                  </span>
+                  <span><Train className="inline h-3.5 w-3.5 text-gold mr-0.5" />{incomingRequest.trainNumber}</span>
+                  <span><MapPin className="inline h-3.5 w-3.5 text-gold mr-0.5" />Platform {incomingRequest.platform} · {incomingRequest.bogie}</span>
+                  <span><Package className="inline h-3.5 w-3.5 text-gold mr-0.5" />{incomingRequest.luggageCount} bags</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-sm text-cream/80">
                   <span className="text-2xl">{incomingRequest.passengerAvatar}</span>
                   <span>{incomingRequest.passengerName}</span>
                   <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs text-gold font-bold">
-                    ₹{incomingRequest.fare} · You earn ₹{Math.round(incomingRequest.fare * 0.8)}
+                    ₹{incomingRequest.fare} est. · You earn ₹{Math.round(incomingRequest.fare * 0.8)}
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-[10px] text-cream/50">
@@ -155,48 +155,46 @@ function CoolieDashboard() {
               )}
             </div>
             <div className="relative mt-4 grid grid-cols-2 gap-3">
-              <button onClick={handleAccept}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-gold py-3 font-display text-lg font-bold text-maroon glow-gold active:scale-95 transition">
-                <CheckCircle2 className="h-5 w-5" /> Accept Job
+              <button onClick={handleAccept} disabled={accepting}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-gold py-3 font-display text-lg font-bold text-maroon glow-gold disabled:opacity-60">
+                {accepting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                {accepting ? "Accepting…" : "Accept Job"}
               </button>
-              <button onClick={handleReject}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-900/40 py-3 font-display text-lg font-semibold text-red-200 hover:bg-red-900/60 active:scale-95 transition">
-                <XCircle className="h-5 w-5" /> Reject
+              <button onClick={handleReject} disabled={rejecting}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-900/40 py-3 font-display text-lg font-semibold text-red-200 disabled:opacity-60">
+                {rejecting ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
+                {rejecting ? "Rejecting…" : "Reject"}
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Active job alert banner ─────────────────────────────────────────── */}
+      {/* ── Active Job Banner ────────────────────────────────────────────── */}
       <AnimatePresence>
-        {myJob && myJob.status === "assigned" && !incomingRequest && (
-          <motion.div
-            initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}
-            className="animate-flash rounded-2xl border-2 border-gold p-5 text-center"
-          >
-            <div className="flex items-center justify-center gap-3 text-maroon">
-              <Bell className="h-6 w-6" />
-              <span className="font-display text-2xl font-bold">
-                ON JOB — PLATFORM {myJob.platform} · TRAIN {myJob.trainNumber} · {myJob.luggageCount} BAGS
-              </span>
+        {myJob?.status === "assigned" && !incomingRequest && (
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}
+            className="rounded-2xl border-2 border-gold p-4 text-center bg-gradient-to-r from-maroon/80 to-maroon/60">
+            <div className="flex items-center justify-center gap-2 text-gold font-display text-lg font-bold">
+              <Bell className="h-5 w-5" /> ON JOB · PLATFORM {myJob.platform} · TRAIN {myJob.trainNumber}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Profile + Wallet ────────────────────────────────────────────────── */}
+      {/* ── Profile + Wallet ─────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Porter Profile" icon={<Briefcase className="h-5 w-5" />} className="lg:col-span-1">
+        <Panel title="Coolie Section" icon={<Briefcase className="h-5 w-5" />} className="lg:col-span-1">
           <div className="text-center">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-gold text-5xl shadow-[0_0_30px_oklch(0.78_0.14_75/0.5)]">
-              {me.avatar}
-            </div>
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-gold text-5xl shadow-[0_0_30px_oklch(0.78_0.14_75/0.5)]">{me.avatar}</div>
             <h3 className="mt-3 font-display text-2xl text-gold">{me.name}</h3>
             <p className="text-sm text-cream/70">{me.station}</p>
             <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-gradient-gold px-3 py-1 text-xs font-bold text-maroon">
               <CheckCircle2 className="h-3 w-3" /> BADGE {me.badge}
             </div>
+            {me.experience != null && (
+              <div className="mt-1 text-xs text-cream/50">{me.experience}yr exp · {me.shift === "night" ? "🌙 Night" : "☀ Day"} shift</div>
+            )}
           </div>
           <div className="mt-5">
             <WalletCard title="Partner Wallet" subtitle="80% Earnings Hub" balance={coolieWallets[me.id] || 0} badge="PARTNER" />
@@ -224,16 +222,16 @@ function CoolieDashboard() {
         </Panel>
       </div>
 
-      {/* ── Active Job Panel ────────────────────────────────────────────────── */}
+      {/* ── Active Job Panel ─────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel title="Active Job" icon={<Package className="h-5 w-5" />} className="lg:col-span-2" glow={!!myJob}>
           {!myJob ? (
             <div className="py-10 text-center text-cream/60">
               <Package className="mx-auto mb-3 h-12 w-12 text-gold/50" />
-              <p>No active job. {incomingRequest ? "Respond to the incoming request above." : "Waiting for dispatch from Command Center…"}</p>
+              <p>{incomingRequest ? "Respond to the incoming request above." : "Waiting for a booking request…"}</p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Stat icon={<Train className="h-4 w-4" />} label="Train" value={myJob.trainNumber} sub={myJob.trainName} />
                 <Stat icon={<MapPin className="h-4 w-4" />} label="Platform" value={`#${myJob.platform}`} sub={`Bogie ${myJob.bogie}`} />
@@ -241,18 +239,48 @@ function CoolieDashboard() {
                 <Stat icon={<Briefcase className="h-4 w-4" />} label="Service" value={myJob.serviceMode === "bogie" ? "Bogie" : "Platform"} sub="delivery" />
               </div>
 
-              <div className="rounded-xl bg-maroon/40 p-4 flex gap-3">
+              {/* Fare status */}
+              <div className={`rounded-xl border px-4 py-3 flex items-center justify-between ${myJob.fareConfirmed ? "border-green-500/40 bg-green-900/20" : "border-yellow-500/30 bg-yellow-900/20"}`}>
+                <div className="text-sm text-cream/80">
+                  {myJob.fareConfirmed
+                    ? <span className="flex items-center gap-1 text-green-300"><CheckCircle2 className="h-4 w-4" /> Final Rate Confirmed</span>
+                    : <span className="flex items-center gap-1 text-yellow-200"><Loader2 className="h-4 w-4 animate-spin" /> Rate Calculating…</span>}
+                </div>
+                <div className="font-display text-2xl text-gold">₹{effectiveFare}</div>
+              </div>
+
+              {/* Custom fare input for coolie */}
+              {!myJob.fareConfirmed && (
+                <div className="rounded-xl border border-gold/20 bg-maroon/40 p-3">
+                  <p className="text-xs text-cream/60 mb-2">Set a custom rate for this booking:</p>
+                  <div className="flex gap-2">
+                    <div className="flex flex-1 items-center gap-2 rounded-xl border border-gold/30 bg-maroon/40 px-3 py-2 focus-within:border-gold">
+                      <IndianRupee className="h-4 w-4 text-gold/60 flex-shrink-0" />
+                      <input type="number" min={50} placeholder="Enter custom rate…"
+                        value={customFareInput}
+                        onChange={e => setCustomFareInput(e.target.value)}
+                        className="w-full bg-transparent text-cream outline-none placeholder:text-cream/30" />
+                    </div>
+                    <button onClick={handleSaveFare} disabled={!customFareInput || savingFare}
+                      className="inline-flex items-center gap-1 rounded-xl bg-gradient-gold px-4 py-2 font-semibold text-maroon disabled:opacity-50">
+                      {savingFare ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                      {savingFare ? "Saving…" : "Confirm Rate"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-3 rounded-xl bg-maroon/40 p-4">
                 {myJob.luggagePhoto
                   ? <img src={myJob.luggagePhoto} alt="luggage" className="h-24 w-24 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
                   : <div className="h-24 w-24 flex items-center justify-center rounded-lg border border-gold/20 bg-maroon/60 text-gold/40 flex-shrink-0"><ImageIcon className="h-8 w-8" /></div>}
                 <div className="flex-1">
-                  <div className="text-xs uppercase tracking-widest text-cream/60 mb-1">Passenger &amp; Luggage</div>
                   <div className="flex items-center gap-2 text-cream">
                     <span className="text-2xl">{myJob.passengerAvatar}</span>
                     <span className="font-semibold">{myJob.passengerName}</span>
                   </div>
                   <div className="mt-1 text-xs text-cream/60">Identify these bags on the ground.</div>
-                  <div className="mt-1 text-xs text-gold">Fare ₹{myJob.fare} · You earn ₹{Math.round(myJob.fare * 0.8)}</div>
+                  <div className="mt-1 text-xs text-gold">You earn ₹{Math.round(effectiveFare * 0.8)}</div>
                   <div className="mt-1 flex items-center gap-1 text-[10px] text-cream/40">
                     <Phone className="h-2.5 w-2.5" /> Admin: 7080809908
                   </div>
@@ -262,13 +290,10 @@ function CoolieDashboard() {
               {/* OTP verification */}
               {myJob.status === "assigned" && (
                 <div className="space-y-3">
-                  <div className="text-center">
-                    <div className="text-xs uppercase tracking-widest text-cream/60">OTP Handshake</div>
-                    <p className="text-sm text-cream/70 mt-1">Enter passenger OTP to verify &amp; complete ride</p>
-                  </div>
+                  <div className="text-center text-xs text-cream/70">Enter passenger OTP to verify &amp; complete</div>
                   <div className="flex justify-center gap-2">
-                    {[0, 1, 2, 3].map(i => (
-                      <div key={i} className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 font-display text-3xl ${otp[i] ? "border-gold bg-gradient-gold text-maroon" : "border-gold/30 bg-maroon/40 text-gold"}`}>
+                    {[0,1,2,3].map(i => (
+                      <div key={i} className={`flex h-14 w-12 items-center justify-center rounded-xl border-2 font-display text-3xl transition ${otp[i] ? "border-gold bg-gradient-gold text-maroon" : "border-gold/30 bg-maroon/40 text-gold"}`}>
                         {otp[i] || ""}
                       </div>
                     ))}
@@ -282,23 +307,21 @@ function CoolieDashboard() {
                     <button onClick={() => otp.length < 4 && setOtp(otp + "0")} className="rounded-xl border border-gold/30 bg-maroon/40 py-4 font-display text-2xl text-gold hover:bg-maroon/60">0</button>
                     <button onClick={handleVerify} className="rounded-xl bg-gradient-gold py-4 font-bold text-maroon active:scale-95">✓</button>
                   </div>
-                  <button onClick={handleVerify}
-                    className="w-full rounded-xl bg-gradient-gold py-3 font-display text-lg font-bold text-maroon glow-gold">
+                  <button onClick={handleVerify} className="w-full rounded-xl bg-gradient-gold py-3 font-display text-lg font-bold text-maroon glow-gold">
                     Verify &amp; Complete Ride
                   </button>
-                  {error && <p className="text-center text-sm text-destructive">{error}</p>}
+                  {otpError && <p className="text-center text-sm text-red-300">{otpError}</p>}
                 </div>
               )}
 
-              {/* ── Cancel Deal (mutual cancellation) ──────────────────────── */}
+              {/* Cancel Deal */}
               {["assigned", "requested"].includes(myJob.status) && (
                 <div className="rounded-xl border border-red-500/30 bg-red-900/20 p-4">
-                  <p className="text-xs text-red-300/80 mb-3">
-                    If a dispute arises on-ground or the deal falls through, cancel here. The escrowed fare will be refunded to the passenger.
-                  </p>
-                  <button onClick={handleCancelDeal}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-900/50 py-3 font-semibold text-red-200 hover:bg-red-900/70 active:scale-95 transition">
-                    <XCircle className="h-5 w-5" /> Cancel Deal
+                  <p className="text-xs text-red-300/80 mb-3">Ground-level dispute? Cancel here — escrowed fare refunded to passenger.</p>
+                  <button onClick={handleCancelDeal} disabled={cancelling}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-900/50 py-3 font-semibold text-red-200 hover:bg-red-900/70 disabled:opacity-60 transition">
+                    {cancelling ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
+                    {cancelling ? "Cancelling Deal…" : "Cancel Deal"}
                   </button>
                 </div>
               )}
@@ -306,23 +329,21 @@ function CoolieDashboard() {
           )}
         </Panel>
 
-        {/* ── SOS Panel ──────────────────────────────────────────────────────── */}
+        {/* ── SOS Panel ──────────────────────────────────────────────────── */}
         <Panel title="Emergency" icon={<AlertTriangle className="h-5 w-5" />} className="lg:col-span-1">
-          <p className="text-sm text-cream/70 mb-2">Use only in case of harassment, theft, or medical emergency. Admin will be alerted immediately.</p>
-          <div className="mb-4 flex items-center gap-1 text-xs text-cream/50">
+          <p className="text-sm text-cream/70 mb-2">Use for harassment, theft, or medical emergency.</p>
+          <div className="mb-4 text-xs text-cream/50 flex items-center gap-1">
             <Phone className="h-3 w-3 text-gold/50" /> Admin: 7080809908
           </div>
-          <button
-            onClick={() => { triggerSOS(me.id); alert("🚨 SOS sent to Admin Command Center. Help is on the way!"); }}
-            className="w-full rounded-3xl bg-gradient-to-br from-red-600 to-red-800 py-8 font-display text-3xl font-bold text-white shadow-[0_0_40px_oklch(0.6_0.22_25/0.6)] hover:opacity-90 active:scale-95 transition animate-pulse-gold"
-          >
+          <button onClick={() => { triggerSOS(me.id); alert("🚨 SOS sent to Admin Command Center!"); }}
+            className="w-full rounded-3xl bg-gradient-to-br from-red-600 to-red-800 py-8 font-display text-3xl font-bold text-white shadow-[0_0_40px_oklch(0.6_0.22_25/0.6)] hover:opacity-90 active:scale-95 transition animate-pulse">
             🚨 SOS
           </button>
-          <p className="mt-3 text-center text-xs text-cream/50">Press once to trigger — admin will respond</p>
+          <p className="mt-3 text-center text-xs text-cream/50">Press once to alert admin</p>
         </Panel>
       </div>
 
-      {/* ── Earning History ──────────────────────────────────────────────────── */}
+      {/* ── Earnings History ─────────────────────────────────────────────── */}
       <Panel title="Earning Tracker · History" icon={<IndianRupee className="h-5 w-5" />} delay={0.4}>
         <TransactionLedger txns={transactions} perspective="coolie" coolieId={me.id} />
       </Panel>

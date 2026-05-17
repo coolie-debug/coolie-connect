@@ -1,0 +1,42 @@
+CONVERT THE ENTIRE APPLICATION FROM DEMO MODE TO 100% PRODUCTION-READY FULLY WORKING DEPLOYMENT WITH SUPABASE REALTIME BINDINGS. REMOVE ALL MOCK/STATIC STATES.
+
+IMPLEMENT THE FOLLOWING LIVE ARCHITECTURE:
+
+1. DATABASE SCHEMAS & REALTIME SYNCHRONIZATION (Supabase Setup):
+- Hook up all actions to dynamic Supabase tables. Wire up Realtime subscriptions (`supabase.channel`) so states sync instantly across panels without manual refreshing.
+- Create 4 core tables: `porters` (onboarding logs), `bookings` (luggage jobs), `parcel_bookings` (cargo tracking), and `system_config` (for admin dynamic pricing).
+
+2. BILINGUAL BRANDING & MULTI-PAGE ROUTING NAMESPACE:
+- Rename Dashboard Labels exactly as follows across routers:
+  * "Passenger Hub" -> Change to "Passenger Only"
+  * "Porter Terminal" -> Change to "Coolie Section"
+  * "Command Center" -> Change to "Admin Section"
+- Separate each dashboard onto strict individual, dedicated pages/routes with full responsive card layouts and rich context-aware background graphics (Railway/Porter thematic backdrops).
+
+3. SECURE PASSWORD-PROTECTED ADMIN SECTION:
+- Prompt for a secure Admin Password challenge whenever someone attempts to access the "/admin" route. Block viewing of the Admin Section unless authenticated.
+- Admin Panel must feature a Live Price Overrider that updates a dynamic variable in `system_config`. When changed, it must instantly reflect on the Passenger and Coolie panels.
+
+4. PASSENGER LUGGAGE BOOKING & BIDDING ENGINE:
+- Passenger books with an initial base estimate (Default: ₹100).
+- Display a dynamic status text: "Rate Calculated: Please Wait..." until Admin or Coolie inputs a custom final quote.
+- Once Admin/Coolie inputs a custom fee, update the passenger screen to show "Final Rate for Booking: [Custom Price]".
+- PRIVACY SHIELD: Do NOT expose the Coolie's real phone number to the Passenger. Only show the fixed Admin Support Number (7080809908) during and after booking acceptance. Once the Admin transfers the booking and the Coolie accepts, show the Coolie's Name, Photo, and Badging ID on the passenger's current trip dashboard.
+
+5. COOLIE SECTION WITH STRICT ONBOARDING VALIDATION:
+- Create an advanced Coolie Onboarding Registration Form with progress-bar steps. All fields are MANDATORY:
+  * Name, Address, Verified Mobile, Bank Passbook image upload.
+  * Experience (Years), Duty Shift selection (Day Shift / Night Shift split-section toggle).
+  * Identity Verification: Aadhaar Card photo upload.
+  * Live Security Photo: Enforce a real-time live selfie capture strictly simulated/validated as "Taken Live at Railway Station".
+- Submitted data must map to the `porters` schema and flash on the Admin Section for manual pending approval.
+
+6. NEW PARCEL BOOKING MODULE:
+- Build a dedicated "Parcel Booking" cargo section containing a robust form for freight transport.
+- Mandatory Fields: Sender Name, Sender Photo, Sender Address, Consignee/Receiver Mobile Number, Source Station to Destination Station, Cargo Item Description, Estimated Weight (KG), and an Upload Field for the Parcel/Luggage Photo.
+- Store this in `parcel_bookings` and map it to a separate ledger in the Admin and User History panels.
+
+7. COMPREHENSIVE REWORK OF TRIP HISTORY & LOADER INTERACTIVE ACTIONS:
+- All buttons must show an integrated progress-bar state when clicked (`isLoading` spinner layout) before saving to the backend.
+- Both Passenger and Coolie dashboards must show 3 explicit tables fetched directly from the live database: Current Bookings, Upcoming Bookings, and Past Booking Ledgers.
+- Ensure audio alerts fire reactively when a dynamic booking row updates status to "Assigned" or "Pending Review".

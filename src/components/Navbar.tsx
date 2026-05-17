@@ -1,15 +1,14 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Briefcase, Shield, User } from "lucide-react";
+import { Briefcase, Shield, User, Package } from "lucide-react";
 import { useAppStore, type Role } from "@/store/app-store";
 import { motion } from "framer-motion";
 
 const ROLES: { id: Role; label: string; icon: typeof User; path: string }[] = [
-  { id: "passenger", label: "Passenger", icon: User, path: "/passenger" },
-  { id: "coolie", label: "Coolie", icon: Briefcase, path: "/coolie" },
-  { id: "admin", label: "Admin", icon: Shield, path: "/admin" },
+  { id: "passenger", label: "Passenger Only",  icon: User,     path: "/passenger" },
+  { id: "coolie",    label: "Coolie Section",  icon: Briefcase, path: "/coolie" },
+  { id: "admin",     label: "Admin Section",   icon: Shield,    path: "/admin" },
 ];
 
-/** Bilingual porter badge icon */
 function PorterBadgeIcon() {
   return (
     <div className="relative flex-shrink-0">
@@ -19,8 +18,6 @@ function PorterBadgeIcon() {
           <path d="M12 2a3 3 0 0 1 3 3v1h2a2 2 0 0 1 2 2v1H5V8a2 2 0 0 1 2-2h2V5a3 3 0 0 1 3-3z" />
           <rect x="3" y="11" width="18" height="9" rx="2" />
           <path d="M7 15h.01M12 15h.01M17 15h.01" strokeWidth={2.5} />
-          <path d="M7 11V8" strokeDasharray="2 2" />
-          <path d="M17 11V8" strokeDasharray="2 2" />
         </svg>
       </div>
     </div>
@@ -42,26 +39,18 @@ export function Navbar() {
       <div className="glass-gold mx-auto flex max-w-7xl items-center justify-between rounded-2xl px-6 py-3">
 
         {/* ── Bilingual Logo ── */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/" className="flex items-center gap-3">
           <PorterBadgeIcon />
           <div className="leading-none">
             <div className="flex items-baseline gap-1.5">
-              <span
-                className="font-display text-2xl font-extrabold tracking-wider text-gold"
-                style={{ letterSpacing: "0.12em" }}
-              >
+              <span className="font-display text-2xl font-extrabold tracking-wider text-gold" style={{ letterSpacing: "0.12em" }}>
                 COOLIE
               </span>
-              <span
-                className="text-2xl font-semibold text-cream"
-                style={{ fontFamily: "'Noto Sans Devanagari', 'Mangal', serif", letterSpacing: "0.04em" }}
-              >
+              <span className="text-2xl font-semibold text-cream" style={{ fontFamily: "'Noto Sans Devanagari', 'Mangal', serif", letterSpacing: "0.04em" }}>
                 मित्र
               </span>
             </div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-cream/60 mt-0.5">
-              Royal Railway Concierge
-            </p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-cream/60 mt-0.5">Royal Railway Concierge</p>
           </div>
         </Link>
 
@@ -83,6 +72,18 @@ export function Navbar() {
               </button>
             );
           })}
+
+          {/* Parcel Booking link */}
+          <Link
+            to="/parcel"
+            className={`relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${loc.pathname === "/parcel" ? "text-maroon" : "text-cream/70 hover:text-cream"}`}
+          >
+            {loc.pathname === "/parcel" && (
+              <motion.div layoutId="role-pill" className="absolute inset-0 rounded-full bg-gradient-gold" transition={{ type: "spring", duration: 0.5 }} />
+            )}
+            <Package className="relative h-4 w-4" />
+            <span className="relative">Parcel</span>
+          </Link>
         </div>
 
         {/* ── Support number ── */}

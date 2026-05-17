@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppPassengerRouteImport } from './routes/_app.passenger'
+import { Route as AppParcelRouteImport } from './routes/_app.parcel'
 import { Route as AppCoolieRouteImport } from './routes/_app.coolie'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppCoolieIndexRouteImport } from './routes/_app.coolie.index'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppPassengerRoute = AppPassengerRouteImport.update({
   id: '/passenger',
   path: '/passenger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppParcelRoute = AppParcelRouteImport.update({
+  id: '/parcel',
+  path: '/parcel',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCoolieRoute = AppCoolieRouteImport.update({
@@ -56,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AppAdminRoute
   '/coolie': typeof AppCoolieRouteWithChildren
+  '/parcel': typeof AppParcelRoute
   '/passenger': typeof AppPassengerRoute
   '/coolie/onboard': typeof AppCoolieOnboardRoute
   '/coolie/': typeof AppCoolieIndexRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AppAdminRoute
+  '/parcel': typeof AppParcelRoute
   '/passenger': typeof AppPassengerRoute
   '/coolie/onboard': typeof AppCoolieOnboardRoute
   '/coolie': typeof AppCoolieIndexRoute
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/admin': typeof AppAdminRoute
   '/_app/coolie': typeof AppCoolieRouteWithChildren
+  '/_app/parcel': typeof AppParcelRoute
   '/_app/passenger': typeof AppPassengerRoute
   '/_app/coolie/onboard': typeof AppCoolieOnboardRoute
   '/_app/coolie/': typeof AppCoolieIndexRoute
@@ -83,17 +92,19 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/coolie'
+    | '/parcel'
     | '/passenger'
     | '/coolie/onboard'
     | '/coolie/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/passenger' | '/coolie/onboard' | '/coolie'
+  to: '/' | '/admin' | '/parcel' | '/passenger' | '/coolie/onboard' | '/coolie'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_app/admin'
     | '/_app/coolie'
+    | '/_app/parcel'
     | '/_app/passenger'
     | '/_app/coolie/onboard'
     | '/_app/coolie/'
@@ -125,6 +136,13 @@ declare module '@tanstack/react-router' {
       path: '/passenger'
       fullPath: '/passenger'
       preLoaderRoute: typeof AppPassengerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/parcel': {
+      id: '/_app/parcel'
+      path: '/parcel'
+      fullPath: '/parcel'
+      preLoaderRoute: typeof AppParcelRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/coolie': {
@@ -175,12 +193,14 @@ const AppCoolieRouteWithChildren = AppCoolieRoute._addFileChildren(
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppCoolieRoute: typeof AppCoolieRouteWithChildren
+  AppParcelRoute: typeof AppParcelRoute
   AppPassengerRoute: typeof AppPassengerRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppCoolieRoute: AppCoolieRouteWithChildren,
+  AppParcelRoute: AppParcelRoute,
   AppPassengerRoute: AppPassengerRoute,
 }
 

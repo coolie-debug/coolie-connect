@@ -28,7 +28,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "ulimit -n 65536 2>/dev/null || true; bun run dev"
+args = "bun run dev"
 waitForPort = 5000
 
 [[ports]]

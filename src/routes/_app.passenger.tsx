@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_app/passenger")({ component: Passenger }
 const TRAINS = [
   { num: "12951", name: "Mumbai Rajdhani" }, { num: "12181", name: "Dayodaya Express" },
   { num: "12423", name: "Dibrugarh Rajdhani" }, { num: "12002", name: "Bhopal Shatabdi" },
+  { num: "CUSTOM", name: "Other / Custom Train" },
 ];
 
 const TABS = [

@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Panel } from "@/components/Panel";
 import { useAppStore, STATIONS_LIST } from "@/store/app-store";
 import {
-  UserPlus, Upload, BadgeCheck, Camera, Loader2, CheckCircle2,
-  FileText, Sun, Moon, CreditCard, Fingerprint, MapPin, Phone, Clock,
+  UserPlus, BadgeCheck, Camera, Loader2, CheckCircle2,
+  FileText, Sun, Moon, CreditCard, Fingerprint, MapPin, Phone, Clock, Users,
+  CalendarDays,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -23,7 +24,7 @@ async function uploadDoc(file: File, coolieId: string, bucket = "onboarding-docs
 
 const STEPS = [
   { n: 1, label: "Personal", icon: "👤" },
-  { n: 2, label: "Shift",    icon: "⏰" },
+  { n: 2, label: "Duty",     icon: "⏰" },
   { n: 3, label: "Docs",     icon: "📄" },
   { n: 4, label: "Selfie",   icon: "📸" },
   { n: 5, label: "Review",   icon: "✅" },
@@ -35,10 +36,14 @@ function Onboard() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: "", contact: "", address: "", station: STATIONS_LIST[0],
-    badge: "", experience: 1, shift: "day" as "day" | "night",
+    badge: "", experience: 1,
+    shift: "day" as "day" | "night",
+    dutyHours: 12 as 12 | 24,
+    guarantorNumber: "",
+    joiningDate: new Date().toISOString().split("T")[0],
   });
-  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
-  const [aadhaarName, setAadhaarName] = useState("");
+  const [addrProofFile, setAddrProofFile] = useState<File | null>(null);
+  const [addrProofName, setAddrProofName] = useState("");
   const [bankFile, setBankFile] = useState<File | null>(null);
   const [bankName, setBankName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -46,7 +51,7 @@ function Onboard() {
   const [selfieDone, setSelfieDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const selfieRef = useRef<HTMLInputElement>(null);
-  const aadhaarRef = useRef<HTMLInputElement>(null);
+  const addrProofRef = useRef<HTMLInputElement>(null);
   const bankRef = useRef<HTMLInputElement>(null);
 
   const me = coolies.find(c => c.id === currentCoolieId);
@@ -58,20 +63,24 @@ function Onboard() {
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
+  const step1Valid = !!(form.name && form.badge && form.address && form.contact && form.guarantorNumber && form.joiningDate);
+
   const submit = async () => {
     if (!form.name || !form.badge || !avatar) return;
     setSubmitting(true);
     try {
       const tempId = Math.random().toString(36).slice(2, 9);
       const docs: string[] = [];
-      if (aadhaarFile) { const p = await uploadDoc(aadhaarFile, tempId); docs.push(p); } else if (aadhaarName) docs.push(aadhaarName);
-      if (bankFile)    { const p = await uploadDoc(bankFile, tempId);    docs.push(p); } else if (bankName)    docs.push(bankName);
+      if (addrProofFile) { const p = await uploadDoc(addrProofFile, tempId); docs.push(p); } else if (addrProofName) docs.push(addrProofName);
+      if (bankFile)      { const p = await uploadDoc(bankFile, tempId);      docs.push(p); } else if (bankName)      docs.push(bankName);
 
       await registerCoolie({
         name: form.name, contact: form.contact || "+91 90000 00000",
         station: form.station, badge: form.badge, avatar: avatar!,
-        documents: docs.length ? docs : ["aadhaar-front.pdf", "bank-passbook.pdf"],
+        documents: docs.length ? docs : ["address-proof.pdf", "bank-passbook.pdf"],
         address: form.address, experience: form.experience, shift: form.shift,
+        dutyHours: form.dutyHours, guarantorNumber: form.guarantorNumber,
+        joiningDate: form.joiningDate,
       });
     } finally {
       setSubmitting(false);
@@ -80,35 +89,25 @@ function Onboard() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Panel title="Coolie Section — Onboarding" icon={<UserPlus className="h-6 w-6" />}>
+      <Panel title="Coolie Section — Registration" icon={<UserPlus className="h-6 w-6" />}>
 
-        {/* ── Visual Step Indicator ─────────────────────────────────────── */}
+        {/* ── Visual Step Indicator ──────────────────────────────────────── */}
         <div className="mb-8">
           <div className="step-indicator mb-4">
             {STEPS.map((s, i) => (
               <div key={s.n} className="flex items-center">
                 <div className={`step-dot ${step === s.n ? "active" : step > s.n ? "done" : ""}`}>
                   <div className="step-dot-circle">
-                    {step > s.n
-                      ? <CheckCircle2 className="h-4 w-4" />
-                      : <span>{s.n}</span>}
+                    {step > s.n ? <CheckCircle2 className="h-4 w-4" /> : <span>{s.n}</span>}
                   </div>
                   <span className="step-label">{s.label}</span>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`step-line ${step > s.n ? "done" : ""}`} />
-                )}
+                {i < STEPS.length - 1 && <div className={`step-line ${step > s.n ? "done" : ""}`} />}
               </div>
             ))}
           </div>
-
-          {/* Animated progress bar */}
           <div className="progress-track">
-            <motion.div
-              className="progress-fill"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-            />
+            <motion.div className="progress-fill" animate={{ width: `${progress}%` }} transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }} />
           </div>
           <div className="mt-2 flex justify-between text-[10px] text-cream/40">
             <span>Step {step} of {STEPS.length}</span>
@@ -117,28 +116,37 @@ function Onboard() {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* ── Step 1: Personal Details ────────────────────────────────── */}
+
+          {/* ── Step 1: Personal Details ──────────────────────────────────── */}
           {step === 1 && (
             <motion.div key="s1" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="step-number">1</div>
-                <div>
-                  <h3 className="font-display text-xl text-gold">Personal Details</h3>
-                  <p className="text-xs text-cream/50">Enter your official name, contact, and station assignment</p>
-                </div>
-              </div>
+              <StepHeader n={1} title="Personal Details" sub="Full name, contact, address and guarantor — all mandatory" />
               <div className="form-step-card space-y-4">
                 <Field label="Full Name *" value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="Ramesh Kumar" icon={<UserPlus className="h-4 w-4 text-gold" />} />
-                <Field label="Verified Mobile Number *" value={form.contact} onChange={v => setForm({ ...form, contact: v })} placeholder="+91 98765 43210" icon={<Phone className="h-4 w-4 text-gold" />} />
+                <Field label="Mobile Number *" value={form.contact} onChange={v => setForm({ ...form, contact: v })} placeholder="+91 98765 43210" icon={<Phone className="h-4 w-4 text-gold" />} type="tel" />
                 <Field label="Home Address *" value={form.address} onChange={v => setForm({ ...form, address: v })} placeholder="123, Street, City, State" icon={<MapPin className="h-4 w-4 text-gold" />} />
+                <Field label="Guarantor Mobile Number *" value={form.guarantorNumber} onChange={v => setForm({ ...form, guarantorNumber: v })} placeholder="+91 90000 11111 (Guarantor / Reference)" icon={<Users className="h-4 w-4 text-gold" />} type="tel" />
+
                 <div>
                   <label className="text-xs uppercase tracking-widest text-cream/60">Railway Station</label>
                   <select value={form.station} onChange={e => setForm({ ...form, station: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold">
-                    {STATIONS_LIST.map(s => <option key={s} className="bg-maroon">{s}</option>)}
+                    {STATIONS_LIST.map(s => <option key={s} value={s} className="bg-maroon">{s}</option>)}
                   </select>
                 </div>
+
                 <Field label="Badge / Billa Number *" value={form.badge} onChange={v => setForm({ ...form, badge: v.toUpperCase() })} placeholder="NDLS-0421" icon={<BadgeCheck className="h-4 w-4 text-gold" />} />
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-cream/60">Joining Date *</label>
+                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 focus-within:border-gold transition">
+                    <CalendarDays className="h-4 w-4 text-gold flex-shrink-0" />
+                    <input type="date" value={form.joiningDate}
+                      onChange={e => setForm({ ...form, joiningDate: e.target.value })}
+                      className="w-full bg-transparent text-cream outline-none [color-scheme:dark]" />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs uppercase tracking-widest text-cream/60">Experience (Years)</label>
                   <div className="mt-2 flex items-center gap-3">
@@ -151,44 +159,67 @@ function Onboard() {
                   </div>
                 </div>
               </div>
-              <StepBtn disabled={!form.name || !form.badge || !form.address} onNext={() => setStep(2)} />
+              <button onClick={() => setStep(2)} disabled={!step1Valid}
+                className="w-full btn-premium justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none">
+                Next →
+              </button>
+              {!step1Valid && (
+                <p className="text-center text-[10px] text-red-300/70">All fields above are mandatory</p>
+              )}
             </motion.div>
           )}
 
-          {/* ── Step 2: Duty Shift ──────────────────────────────────────── */}
+          {/* ── Step 2: Duty Shift & Hours ────────────────────────────────── */}
           {step === 2 && (
             <motion.div key="s2" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="step-number">2</div>
-                <div>
-                  <h3 className="font-display text-xl text-gold">Duty Shift Selection</h3>
-                  <p className="text-xs text-cream/50">Select your primary working shift at the station</p>
-                </div>
-              </div>
+              <StepHeader n={2} title="Duty Shift & Hours" sub="Select your working shift and daily duty duration" />
+
+              {/* Day / Night shift */}
               <div className="form-step-card">
+                <p className="text-xs uppercase tracking-widest text-gold/70 font-semibold mb-3">Shift Timing</p>
                 <div className="grid grid-cols-2 gap-4">
                   {(["day", "night"] as const).map(s => (
                     <button key={s} onClick={() => setForm({ ...form, shift: s })}
-                      className={`relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition ${form.shift === s ? "border-gold bg-gradient-to-br from-maroon/80 via-maroon/60 to-maroon/80" : "border-gold/20 bg-maroon/30 hover:border-gold/50"}`}>
-                      {form.shift === s && (
-                        <motion.div layoutId="shift-glow" className="absolute inset-0 rounded-xl ring-2 ring-gold/60 ring-offset-0 pointer-events-none" />
-                      )}
-                      <div className={`flex h-16 w-16 items-center justify-center rounded-full ${s === "day" ? "bg-yellow-500/20" : "bg-blue-900/40"}`}>
-                        {s === "day" ? <Sun className={`h-8 w-8 ${form.shift === "day" ? "text-yellow-300" : "text-yellow-500/60"}`} /> : <Moon className={`h-8 w-8 ${form.shift === "night" ? "text-blue-300" : "text-blue-500/60"}`} />}
+                      className={`relative flex flex-col items-center gap-3 rounded-2xl border-2 p-5 transition ${form.shift === s ? "border-gold bg-gradient-to-br from-maroon/80 to-maroon/60" : "border-gold/20 bg-maroon/30 hover:border-gold/50"}`}>
+                      {form.shift === s && <motion.div layoutId="shift-glow" className="absolute inset-0 rounded-xl ring-2 ring-gold/60 pointer-events-none" />}
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-full ${s === "day" ? "bg-yellow-500/20" : "bg-blue-900/40"}`}>
+                        {s === "day" ? <Sun className={`h-7 w-7 ${form.shift === "day" ? "text-yellow-300" : "text-yellow-500/60"}`} /> : <Moon className={`h-7 w-7 ${form.shift === "night" ? "text-blue-300" : "text-blue-500/60"}`} />}
                       </div>
                       <div className="text-center">
-                        <div className={`font-display text-lg font-semibold ${form.shift === s ? "text-gold" : "text-cream/70"}`}>{s === "day" ? "Day Shift" : "Night Shift"}</div>
+                        <div className={`font-display text-base font-semibold ${form.shift === s ? "text-gold" : "text-cream/70"}`}>{s === "day" ? "Day Shift" : "Night Shift"}</div>
                         <div className="text-[11px] text-cream/50 mt-0.5">{s === "day" ? "6 AM – 6 PM" : "6 PM – 6 AM"}</div>
                       </div>
-                      {form.shift === s && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-gold" />}
+                      {form.shift === s && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-gold" />}
                     </button>
                   ))}
                 </div>
-                <div className="mt-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-maroon/40 px-4 py-3 text-xs text-cream/60">
+              </div>
+
+              {/* 12h / 24h duty hours */}
+              <div className="form-step-card">
+                <p className="text-xs uppercase tracking-widest text-gold/70 font-semibold mb-3">Daily Duty Duration</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {([12, 24] as const).map(h => (
+                    <button key={h} onClick={() => setForm({ ...form, dutyHours: h })}
+                      className={`relative flex flex-col items-center gap-3 rounded-2xl border-2 p-5 transition ${form.dutyHours === h ? "border-gold bg-gradient-to-br from-maroon/80 to-maroon/60" : "border-gold/20 bg-maroon/30 hover:border-gold/50"}`}>
+                      {form.dutyHours === h && <motion.div layoutId="duty-glow" className="absolute inset-0 rounded-xl ring-2 ring-gold/60 pointer-events-none" />}
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/10">
+                        <Clock className={`h-7 w-7 ${form.dutyHours === h ? "text-gold" : "text-gold/40"}`} />
+                      </div>
+                      <div className="text-center">
+                        <div className={`font-display text-2xl font-bold ${form.dutyHours === h ? "text-gold" : "text-cream/50"}`}>{h}h</div>
+                        <div className="text-[11px] text-cream/50 mt-0.5">{h === 12 ? "Half Duty" : "Full Duty (24 hrs)"}</div>
+                      </div>
+                      {form.dutyHours === h && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-gold" />}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-gold/20 bg-maroon/40 px-4 py-2.5 text-xs text-cream/60">
                   <Clock className="h-3.5 w-3.5 text-gold/60 flex-shrink-0" />
-                  You can request a shift change after onboarding via your Station Admin.
+                  Shift change requests can be made via Station Admin after onboarding.
                 </div>
               </div>
+
               <div className="flex gap-2">
                 <button onClick={() => setStep(1)} className="rounded-xl border border-gold/40 px-5 py-3 text-gold hover:bg-maroon/40 transition">Back</button>
                 <button onClick={() => setStep(3)} className="flex-1 btn-premium justify-center">Next: Documents</button>
@@ -196,31 +227,25 @@ function Onboard() {
             </motion.div>
           )}
 
-          {/* ── Step 3: Documents ───────────────────────────────────────── */}
+          {/* ── Step 3: Documents ─────────────────────────────────────────── */}
           {step === 3 && (
             <motion.div key="s3" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="step-number">3</div>
-                <div>
-                  <h3 className="font-display text-xl text-gold">Identity Verification</h3>
-                  <p className="text-xs text-cream/50">Upload your Aadhaar and bank documents for verification</p>
-                </div>
-              </div>
+              <StepHeader n={3} title="Document Upload" sub="Upload your Address Proof and Bank Passbook — both mandatory" />
 
-              {/* Aadhaar */}
+              {/* Address Proof */}
               <div className="form-step-card">
-                <label className="text-xs uppercase tracking-widest text-gold/80 font-semibold mb-3 block">Aadhaar Card Photo *</label>
-                <button onClick={() => aadhaarRef.current?.click()}
-                  className={`mt-1 flex w-full items-center gap-3 rounded-xl border-2 border-dashed p-4 transition ${aadhaarName ? "border-green-500/60 bg-green-900/20" : "border-gold/30 hover:border-gold/60 hover:bg-maroon/30"}`}>
-                  <Fingerprint className={`h-8 w-8 flex-shrink-0 ${aadhaarName ? "text-green-400" : "text-gold/60"}`} />
+                <label className="text-xs uppercase tracking-widest text-gold/80 font-semibold mb-3 block">Address Proof (Aadhaar / Voter ID / Ration Card) *</label>
+                <button onClick={() => addrProofRef.current?.click()}
+                  className={`mt-1 flex w-full items-center gap-3 rounded-xl border-2 border-dashed p-4 transition ${addrProofName ? "border-green-500/60 bg-green-900/20" : "border-gold/30 hover:border-gold/60 hover:bg-maroon/30"}`}>
+                  <Fingerprint className={`h-8 w-8 flex-shrink-0 ${addrProofName ? "text-green-400" : "text-gold/60"}`} />
                   <div className="flex-1 text-left">
-                    <div className="text-sm text-cream">{aadhaarName || "Upload Aadhaar Card"}</div>
+                    <div className="text-sm text-cream">{addrProofName || "Upload Address Proof"}</div>
                     <div className="text-[10px] text-cream/50 mt-0.5">PDF, PNG, JPG · Max 5 MB</div>
                   </div>
-                  {aadhaarName && <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0" />}
+                  {addrProofName && <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0" />}
                 </button>
-                <input ref={aadhaarRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) { setAadhaarFile(f); setAadhaarName(f.name); } }} />
+                <input ref={addrProofRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setAddrProofFile(f); setAddrProofName(f.name); } }} />
               </div>
 
               {/* Bank Passbook */}
@@ -239,88 +264,66 @@ function Onboard() {
                   onChange={e => { const f = e.target.files?.[0]; if (f) { setBankFile(f); setBankName(f.name); } }} />
               </div>
 
-              {(!aadhaarName || !bankName) && (
-                <button onClick={() => { setAadhaarName("aadhaar-front.pdf"); setBankName("bank-passbook.pdf"); }}
+              {(!addrProofName || !bankName) && (
+                <button onClick={() => { setAddrProofName("address-proof.pdf"); setBankName("bank-passbook.pdf"); }}
                   className="text-xs text-gold/60 hover:text-gold underline transition">Use demo documents for testing</button>
               )}
 
               <div className="flex gap-2">
                 <button onClick={() => setStep(2)} className="rounded-xl border border-gold/40 px-5 py-3 text-gold hover:bg-maroon/40 transition">Back</button>
-                <button onClick={() => setStep(4)} disabled={!aadhaarName || !bankName}
+                <button onClick={() => setStep(4)} disabled={!addrProofName || !bankName}
                   className="flex-1 btn-premium justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none">Next: Selfie</button>
               </div>
             </motion.div>
           )}
 
-          {/* ── Step 4: Live Selfie ─────────────────────────────────────── */}
+          {/* ── Step 4: Live Selfie ───────────────────────────────────────── */}
           {step === 4 && (
             <motion.div key="s4" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="step-number">4</div>
-                <div>
-                  <h3 className="font-display text-xl text-gold">Live Selfie Verification</h3>
-                  <p className="text-xs text-cream/50">A live photo verifies your identity at the railway station</p>
-                </div>
-              </div>
-
+              <StepHeader n={4} title="Live Selfie & Photo" sub="A live photo verifies your identity at the railway station" />
               <div className="form-step-card">
                 <div className="mb-4 flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-900/20 px-3 py-2 text-xs text-yellow-200">
                   <Camera className="h-3.5 w-3.5 flex-shrink-0" />
                   Must be taken live at railway station or duty point. No stored photos.
                 </div>
-
                 {!selfieDone ? (
                   <div className="flex flex-col items-center gap-4 py-4">
                     <div className="relative flex h-44 w-44 items-center justify-center rounded-full border-4 border-dashed border-gold/40 bg-maroon/40">
                       <Camera className="h-14 w-14 text-gold/50" />
                       {selfieCapture && (
-                        <motion.div
-                          className="absolute inset-0 rounded-full border-4 border-gold"
-                          animate={{ scale: [1, 1.12, 1], opacity: [1, 0.4, 1] }}
-                          transition={{ duration: 0.8, repeat: Infinity }}
-                        />
-                      )}
-                      {selfieCapture && (
-                        <motion.div
-                          className="absolute inset-2 rounded-full bg-gold/5"
-                          animate={{ opacity: [0, 0.4, 0] }}
-                          transition={{ duration: 0.8, repeat: Infinity }}
-                        />
+                        <>
+                          <motion.div className="absolute inset-0 rounded-full border-4 border-gold"
+                            animate={{ scale: [1, 1.12, 1], opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                          <motion.div className="absolute inset-2 rounded-full bg-gold/5"
+                            animate={{ opacity: [0, 0.4, 0] }} transition={{ duration: 0.8, repeat: Infinity }} />
+                        </>
                       )}
                     </div>
                     <button
-                      onClick={() => {
-                        setSelfieCapture(true);
-                        setTimeout(() => { setSelfieCapture(false); setSelfieDone(true); }, 2000);
-                      }}
+                      onClick={() => { setSelfieCapture(true); setTimeout(() => { setSelfieCapture(false); setSelfieDone(true); }, 2000); }}
                       className={`btn-premium ${selfieCapture ? "btn-premium-loading" : ""}`}
                     >
                       {selfieCapture
                         ? <><Loader2 className="h-4 w-4 animate-spin" /> Capturing…</>
-                        : <><Camera className="h-4 w-4" /> Capture Live Selfie</>}
+                        : <><Camera className="h-4 w-4" /> Capture Live Photo</>}
                     </button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 py-4">
-                    <motion.div
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", duration: 0.6 }}
-                      className="flex h-44 w-44 items-center justify-center rounded-full bg-gradient-gold text-7xl shadow-[0_0_40px_oklch(0.78_0.14_75/0.5)]"
-                    >
+                    <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", duration: 0.6 }}
+                      className="flex h-44 w-44 items-center justify-center rounded-full bg-gradient-gold text-7xl shadow-[0_0_40px_oklch(0.78_0.14_75/0.5)]">
                       {avatar || "📸"}
                     </motion.div>
                     <div className="flex items-center gap-2 text-sm text-green-300">
-                      <CheckCircle2 className="h-4 w-4" /> Selfie captured and verified
+                      <CheckCircle2 className="h-4 w-4" /> Photo captured and verified
                     </div>
-                    <span className="rounded-full bg-green-900/40 border border-green-500/40 px-3 py-1 text-[10px] uppercase tracking-widest text-green-200 animate-badge-pop">
+                    <span className="rounded-full bg-green-900/40 border border-green-500/40 px-3 py-1 text-[10px] uppercase tracking-widest text-green-200">
                       Live · Railway Station Verified
                     </span>
                     <button onClick={() => setSelfieDone(false)} className="text-xs text-gold/60 hover:text-gold underline transition">Retake</button>
                   </div>
                 )}
               </div>
-
               <div className="flex gap-2">
                 <button onClick={() => setStep(3)} className="rounded-xl border border-gold/40 px-5 py-3 text-gold hover:bg-maroon/40 transition">Back</button>
                 <button onClick={() => setStep(5)} disabled={!selfieDone}
@@ -329,25 +332,18 @@ function Onboard() {
             </motion.div>
           )}
 
-          {/* ── Step 5: Review & Submit ─────────────────────────────────── */}
+          {/* ── Step 5: Review & Submit ───────────────────────────────────── */}
           {step === 5 && (
             <motion.div key="s5" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} className="space-y-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="step-number">5</div>
-                <div>
-                  <h3 className="font-display text-xl text-gold">Review & Submit</h3>
-                  <p className="text-xs text-cream/50">Confirm all details before submitting for admin approval</p>
-                </div>
-              </div>
+              <StepHeader n={5} title="Review & Submit" sub="Confirm all details before submitting for admin approval" />
 
               {/* Avatar chooser */}
               <div className="form-step-card">
-                <label className="text-xs uppercase tracking-widest text-cream/60 block mb-3">Select Profile Avatar</label>
+                <label className="text-xs uppercase tracking-widest text-cream/60 block mb-3">Select Profile Avatar *</label>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {AVATARS.map(a => (
                     <motion.button key={a} onClick={() => setAvatar(a)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
                       className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl transition ${avatar === a ? "bg-gradient-gold shadow-[0_0_20px_oklch(0.78_0.14_75/0.5)]" : "bg-maroon/40 hover:bg-maroon/60 border border-gold/20"}`}>
                       {a}
                     </motion.button>
@@ -357,17 +353,20 @@ function Onboard() {
 
               {/* Summary */}
               <div className="form-step-card space-y-2 text-sm">
-                <p className="text-xs uppercase tracking-widest text-gold/70 font-semibold mb-1">Application Summary</p>
-                <SummaryRow label="Name" value={form.name} />
-                <SummaryRow label="Mobile" value={form.contact || "—"} />
-                <SummaryRow label="Address" value={form.address} />
-                <SummaryRow label="Station" value={form.station} />
-                <SummaryRow label="Badge" value={form.badge} />
-                <SummaryRow label="Experience" value={`${form.experience} year${form.experience !== 1 ? "s" : ""}`} />
-                <SummaryRow label="Shift" value={form.shift === "day" ? "☀ Day (6AM–6PM)" : "🌙 Night (6PM–6AM)"} />
-                <SummaryRow label="Aadhaar" value={aadhaarName || "—"} />
-                <SummaryRow label="Bank Passbook" value={bankName || "—"} />
-                <SummaryRow label="Selfie" value="✅ Verified Live" />
+                <p className="text-xs uppercase tracking-widest text-gold/70 font-semibold mb-2">Application Summary</p>
+                <SummaryRow label="Full Name"       value={form.name} />
+                <SummaryRow label="Mobile"          value={form.contact || "—"} />
+                <SummaryRow label="Address"         value={form.address} />
+                <SummaryRow label="Guarantor No."   value={form.guarantorNumber || "—"} />
+                <SummaryRow label="Station"         value={form.station} />
+                <SummaryRow label="Badge"           value={form.badge} />
+                <SummaryRow label="Experience"      value={`${form.experience} year${form.experience !== 1 ? "s" : ""}`} />
+                <SummaryRow label="Shift"           value={form.shift === "day" ? "☀ Day (6AM–6PM)" : "🌙 Night (6PM–6AM)"} />
+                <SummaryRow label="Duty Hours"      value={`${form.dutyHours} Hours per day`} />
+                <SummaryRow label="Joining Date"    value={form.joiningDate} />
+                <SummaryRow label="Address Proof"   value={addrProofName || "—"} />
+                <SummaryRow label="Bank Passbook"   value={bankName || "—"} />
+                <SummaryRow label="Live Photo"      value={selfieDone ? "✅ Verified" : "—"} />
               </div>
 
               <div className="flex gap-2">
@@ -387,12 +386,31 @@ function Onboard() {
   );
 }
 
-function StepBtn({ disabled, onNext }: { disabled: boolean; onNext: () => void }) {
+function StepHeader({ n, title, sub }: { n: number; title: string; sub: string }) {
   return (
-    <button onClick={onNext} disabled={disabled}
-      className="w-full btn-premium justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none">
-      Next →
-    </button>
+    <div className="flex items-center gap-3 mb-2">
+      <div className="step-number">{n}</div>
+      <div>
+        <h3 className="font-display text-xl text-gold">{title}</h3>
+        <p className="text-xs text-cream/50">{sub}</p>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, placeholder, icon, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; icon: React.ReactNode; type?: string;
+}) {
+  return (
+    <div>
+      <label className="text-xs uppercase tracking-widest text-cream/60">{label}</label>
+      <div className="mt-1 flex items-center gap-2 rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 focus-within:border-gold transition">
+        {icon}
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+          className="w-full bg-transparent text-cream outline-none placeholder:text-cream/30" />
+      </div>
+    </div>
   );
 }
 
@@ -405,45 +423,29 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder, icon }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; icon?: React.ReactNode }) {
+function ReviewScreen({ name }: { name: string }) {
   return (
-    <div>
-      <label className="text-xs uppercase tracking-widest text-cream/60 mb-1 block">{label}</label>
-      <div className="flex items-center gap-2 rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 focus-within:border-gold/70 focus-within:shadow-[0_0_0_3px_oklch(0.78_0.14_75/0.12)] transition-all">
-        {icon}
-        <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full bg-transparent text-cream outline-none placeholder:text-cream/35" />
+    <div className="mx-auto max-w-lg py-12 text-center space-y-5">
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.7 }}
+        className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-gold text-5xl shadow-[0_0_40px_oklch(0.78_0.14_75/0.5)]">
+        ⏳
+      </motion.div>
+      <h2 className="font-display text-3xl text-gold">Under Review</h2>
+      <p className="text-cream/70">
+        <strong className="text-cream">{name}</strong> — your application has been submitted. Admin will approve after verification.
+      </p>
+      <div className="rounded-2xl border border-gold/20 bg-maroon/40 p-4 text-sm text-cream/60">
+        Password for Admin approval: <span className="font-mono font-bold text-gold">ADMIN@2026</span><br />
+        Support: <span className="font-mono text-gold">7080809908</span>
       </div>
     </div>
   );
 }
 
-function ReviewScreen({ name }: { name: string }) {
-  return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-gold max-w-md p-10 text-center">
-        {/* Spinning loader ring */}
-        <div className="relative mx-auto mb-6 h-24 w-24">
-          <motion.div
-            className="absolute inset-0 rounded-full border-4 border-gold/20"
-          />
-          <motion.div
-            className="absolute inset-0 rounded-full border-4 border-transparent border-t-gold"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-3xl">🚂</span>
-          </div>
-        </div>
-        <h2 className="font-display text-3xl text-gold mb-2">Pending Approval</h2>
-        <p className="text-cream/80">Namaste <span className="text-gold font-semibold">{name}</span>,</p>
-        <p className="mt-3 text-sm text-cream/70">Your application is being reviewed by the Station Admin. You'll gain access to the Coolie Section once approved.</p>
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-5 py-2 text-xs uppercase tracking-widest text-gold">
-          <Loader2 className="h-3 w-3 animate-spin" /> Status: Pending Review
-        </div>
-        <p className="mt-4 text-xs text-cream/50">Switch to <strong className="text-gold">Admin Section</strong> and use password <strong className="text-gold">ADMIN@2026</strong> to approve.</p>
-      </motion.div>
-    </div>
-  );
-}
+// Type helper for Camera import
+const Camera = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+    <circle cx="12" cy="13" r="3"/>
+  </svg>
+);

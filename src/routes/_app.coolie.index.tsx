@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAppStore } from "@/store/app-store";
 import { Panel } from "@/components/Panel";
 import { WalletCard, TransactionLedger } from "@/components/Wallet";
@@ -8,7 +8,7 @@ import {
   Briefcase, Bell, IndianRupee, AlertTriangle, CheckCircle2,
   MapPin, Package, Train, Image as ImageIcon, XCircle, Phone, Loader2,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_app/coolie/")({ component: CoolieDashboard });

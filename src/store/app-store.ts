@@ -23,6 +23,9 @@ export interface Coolie {
   address?: string;
   experience?: number;
   shift?: "day" | "night";
+  dutyHours?: 12 | 24;
+  guarantorNumber?: string;
+  joiningDate?: string;
   aadhaarUrl?: string;
   bankPassbookUrl?: string;
   selfieUrl?: string;
@@ -336,7 +339,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       station: c.station, badge: c.badge, coolie_status: "pending", available: false,
       wallet_balance: 0, escrow_balance: 0, earnings: 0, documents: c.documents,
       address: c.address ?? null, experience: c.experience ?? null,
-      shift: c.shift ?? null,
+      shift: c.shift ?? null, duty_hours: c.dutyHours ?? null,
+      guarantor_number: c.guarantorNumber ?? null, joining_date: c.joiningDate ?? null,
     });
     if (error) console.warn("registerCoolie DB error:", error.message);
     return id;

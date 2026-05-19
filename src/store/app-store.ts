@@ -140,21 +140,8 @@ function rowToTxn(r: Record<string, unknown>): Txn {
   };
 }
 
-// ─── Seed data ────────────────────────────────────────────────────────────────
+// ─── Stations ─────────────────────────────────────────────────────────────────
 const STATIONS = ["New Delhi (NDLS)", "Mumbai CST (CSMT)", "Howrah Junction (HWH)", "Chennai Central (MAS)", "Bengaluru City (SBC)"];
-
-const SEED_COOLIES: Coolie[] = [
-  { id: "coolie-c1", name: "Ramesh Kumar", contact: "+91 98765 43210", station: STATIONS[0], badge: "NDLS-0421", status: "active", available: true, avatar: "🧔🏽", documents: ["aadhaar.pdf", "police-verify.pdf"], earnings: 1240, experience: 8, shift: "day" },
-  { id: "coolie-c2", name: "Suresh Yadav", contact: "+91 98123 11122", station: STATIONS[0], badge: "NDLS-0518", status: "active", available: true, avatar: "👨🏽‍🦱", documents: ["aadhaar.pdf"], earnings: 980, experience: 5, shift: "night" },
-  { id: "coolie-c3", name: "Manoj Singh", contact: "+91 99887 76655", station: STATIONS[0], badge: "NDLS-0623", status: "pending", available: false, avatar: "🧑🏽", documents: ["aadhaar.pdf", "police-verify.pdf"], earnings: 0, experience: 2, shift: "day" },
-  { id: "coolie-c4", name: "Vikram Patel", contact: "+91 90011 22334", station: STATIONS[1], badge: "CSMT-1102", status: "active", available: false, avatar: "👨🏽", documents: ["aadhaar.pdf"], earnings: 1560, experience: 12, shift: "day" },
-];
-
-const BASE_TS = 1747584000000;
-const SEED_BOOKINGS: Booking[] = [
-  { id: "b1", passengerName: "Anita Sharma", passengerAvatar: "👩🏽", trainNumber: "12951", trainName: "Mumbai Rajdhani", arrivalStation: STATIONS[0], departureStation: STATIONS[1], platform: "4", bogie: "B3", luggageCount: 3, serviceMode: "bogie", status: "pending", otp: "4821", createdAt: BASE_TS - 60000, fare: 300, fareConfirmed: false },
-  { id: "b2", passengerName: "Rajiv Mehta", passengerAvatar: "👨🏽‍💼", trainNumber: "12181", trainName: "Dayodaya Express", arrivalStation: STATIONS[0], departureStation: STATIONS[3], platform: "7", bogie: "A1", luggageCount: 2, serviceMode: "platform", status: "pending", otp: "7193", createdAt: BASE_TS - 30000, fare: 200, fareConfirmed: false },
-];
 
 // ─── Store interface ───────────────────────────────────────────────────────────
 interface AppState {
@@ -227,13 +214,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     avatar: "👩🏽‍💼",
     payments: ["•••• 4821 (HDFC)", "UPI: priya@okhdfc"],
   },
-  passengerWallet: 2500,
+  passengerWallet: 500,
   passengerEscrow: 0,
-  adminWallet: 8420,
-  coolieWallets: { "coolie-c1": 1240, "coolie-c2": 980, "coolie-c4": 1560 },
+  adminWallet: 0,
+  coolieWallets: {},
   transactions: [],
-  coolies: SEED_COOLIES,
-  bookings: SEED_BOOKINGS,
+  coolies: [],
+  bookings: [],
   parcelBookings: [],
   sosAlerts: [],
   dynamicFarePerBag: FARE_PER_BAG,
@@ -299,12 +286,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       set({
-        coolies: coolies.length > 0 ? coolies : SEED_COOLIES,
-        bookings: bookings.length > 0 ? bookings : SEED_BOOKINGS,
+        coolies,
+        bookings,
         transactions, sosAlerts, parcelBookings, dynamicFarePerBag,
-        coolieWallets: Object.keys(coolieWallets).length > 0 ? coolieWallets : { "coolie-c1": 1240, "coolie-c2": 980, "coolie-c4": 1560 },
-        adminWallet: adminProfile ? Number(adminProfile.wallet_balance ?? 8420) : 8420,
-        passengerWallet: passengerProfile ? Number(passengerProfile.wallet_balance ?? 2500) : 2500,
+        coolieWallets,
+        adminWallet: adminProfile ? Number(adminProfile.wallet_balance ?? 0) : 0,
+        passengerWallet: passengerProfile ? Number(passengerProfile.wallet_balance ?? 500) : 500,
         passengerEscrow: passengerProfile ? Number(passengerProfile.escrow_balance ?? 0) : 0,
         loading: false, dbConnected: true,
       });

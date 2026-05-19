@@ -3,6 +3,14 @@ import type { ReactNode } from "react";
 
 type PanelAccent = "passenger" | "coolie" | "admin" | "parcel" | "gold" | null;
 
+const ACCENT_COLORS: Record<string, string> = {
+  passenger: "oklch(0.6 0.2 250)",
+  coolie:    "oklch(0.65 0.2 150)",
+  admin:     "oklch(0.78 0.14 75)",
+  parcel:    "oklch(0.65 0.2 310)",
+  gold:      "oklch(0.78 0.14 75)",
+};
+
 export function Panel({
   children,
   className = "",
@@ -23,6 +31,7 @@ export function Panel({
   tag?: string;
 }) {
   const accentClass = accent ? `panel-accent-${accent} relative` : "relative";
+  const accentColor = accent ? ACCENT_COLORS[accent] : ACCENT_COLORS.gold;
 
   return (
     <motion.div
@@ -31,8 +40,6 @@ export function Panel({
       transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
       className={`glass ${glow ? "glow-gold" : ""} ${accentClass} overflow-hidden ${className}`}
     >
-      {/* Top accent bar rendered via CSS pseudo-element via accentClass */}
-
       {/* Subtle inner texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -43,29 +50,29 @@ export function Panel({
         }}
       />
 
-      {/* Panel glow orb (top right) */}
+      {/* Corner glow orb */}
       <div
-        className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-10"
+        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-[0.12]"
         style={{
-          background:
-            accent === "passenger"
-              ? "radial-gradient(circle, oklch(0.6 0.2 250) 0%, transparent 70%)"
-              : accent === "coolie"
-              ? "radial-gradient(circle, oklch(0.65 0.2 150) 0%, transparent 70%)"
-              : accent === "admin"
-              ? "radial-gradient(circle, oklch(0.78 0.14 75) 0%, transparent 70%)"
-              : accent === "parcel"
-              ? "radial-gradient(circle, oklch(0.65 0.2 310) 0%, transparent 70%)"
-              : "radial-gradient(circle, oklch(0.78 0.14 75) 0%, transparent 70%)",
+          background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)`,
+          filter: "blur(30px)",
+        }}
+      />
+
+      {/* Bottom edge glow */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-1/2 h-px w-2/3 -translate-x-1/2"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${accentColor.replace(")", " / 0.3)")}, transparent)`,
         }}
       />
 
       <div className="relative z-10 p-6">
         {(title || tag) && (
-          <div className="mb-5 flex items-center gap-3 border-b border-gold/20 pb-3">
+          <div className="mb-5 flex items-center gap-3 border-b border-gold/20 pb-4">
             {icon && (
               <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-maroon"
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-maroon shadow-[0_2px_12px_oklch(0.78_0.14_75/0.4)]"
                 style={{ background: "var(--gradient-gold)" }}
               >
                 {icon}

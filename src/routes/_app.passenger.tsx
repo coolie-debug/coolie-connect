@@ -10,7 +10,7 @@ import { playCancelTone } from "@/lib/sound";
 import {
   User, CreditCard, Crown, Train, Package, Plus, Minus,
   ShieldCheck, Sparkles, Lock, Phone, Clock, History, Zap,
-  XCircle, AlertCircle, CheckCircle2, Loader2, IndianRupee,
+  XCircle, AlertCircle, CheckCircle2, Loader2, IndianRupee, MapPin,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/passenger")({ component: Passenger });
@@ -82,25 +82,28 @@ function Passenger() {
       {/* ── Profile + Wallet ─────────────────────────────────────────────── */}
       <Panel title="Passenger Only" icon={<User className="h-5 w-5" />}>
         <div className="grid items-center gap-6 md:grid-cols-[auto_1fr_auto]">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-gold text-5xl shadow-[0_0_30px_oklch(0.78_0.14_75/0.5)]">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-gold text-5xl shadow-[0_0_30px_oklch(0.78_0.14_75/0.5)]"
+          >
             {passengerProfile.avatar}
-          </div>
+          </motion.div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display text-2xl text-gold">{passengerProfile.name}</h3>
-              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-maroon">
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-maroon animate-badge-pop">
                 <Crown className="h-3 w-3" /> {passengerProfile.tier}
               </span>
             </div>
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-cream/70">
               {passengerProfile.payments.map(p => (
-                <span key={p} className="inline-flex items-center gap-1 rounded-full bg-maroon/40 px-3 py-1">
+                <span key={p} className="inline-flex items-center gap-1 rounded-full bg-maroon/40 px-3 py-1 border border-gold/15">
                   <CreditCard className="h-3 w-3 text-gold" /> {p}
                 </span>
               ))}
             </div>
             {passengerEscrow > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-yellow-700/30 px-3 py-1 text-xs text-yellow-200">
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-yellow-700/30 border border-yellow-500/25 px-3 py-1 text-xs text-yellow-200">
                 <Lock className="h-3 w-3" /> ₹{passengerEscrow} locked in escrow
               </div>
             )}
@@ -114,72 +117,109 @@ function Passenger() {
       </Panel>
 
       {/* Dynamic fare notice */}
-      <div className="flex items-center gap-2 rounded-xl border border-gold/20 bg-maroon/30 px-4 py-3 text-sm text-cream/70">
-        <IndianRupee className="h-4 w-4 text-gold flex-shrink-0" />
-        Platform rate: <span className="font-bold text-gold ml-1">₹{dynamicFarePerBag}/bag</span>
-        <span className="text-cream/50 ml-2 text-xs">(set by Admin · may change)</span>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3 rounded-2xl border border-gold/25 bg-maroon/30 px-5 py-3"
+        style={{ background: "linear-gradient(135deg, oklch(0.28 0.1 22 / 0.6), oklch(0.2 0.07 20 / 0.7))" }}
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-gold flex-shrink-0">
+          <IndianRupee className="h-4 w-4 text-maroon" />
+        </div>
+        <div>
+          <span className="text-sm text-cream/80">Platform rate: </span>
+          <span className="font-bold text-gold">₹{dynamicFarePerBag}/bag</span>
+        </div>
+        <span className="ml-auto text-cream/40 text-xs">set by Admin · may change</span>
+      </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* ── Booking Form ────────────────────────────────────────────────── */}
         <Panel title="Book a Coolie" icon={<Package className="h-5 w-5" />} delay={0.1}>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs uppercase tracking-widest text-cream/60">Train</label>
-              <select value={form.trainNumber}
-                onChange={e => { const t = TRAINS.find(x => x.num === e.target.value)!; setForm({ ...form, trainNumber: t.num, trainName: t.name }); }}
-                className="mt-1 w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold">
-                {TRAINS.map(t => <option key={t.num} className="bg-maroon">{t.num} · {t.name}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <SelectField label="Arrival Station" value={form.arrivalStation} onChange={v => setForm({ ...form, arrivalStation: v })} options={STATIONS_LIST} />
-              <SelectField label="Departure Station" value={form.departureStation} onChange={v => setForm({ ...form, departureStation: v })} options={STATIONS_LIST} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <InputField label="Platform #" value={form.platform} onChange={v => setForm({ ...form, platform: v })} />
-              <InputField label="Bogie #" value={form.bogie} onChange={v => setForm({ ...form, bogie: v })} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-widest text-cream/60">Number of Bags</label>
-              <div className="mt-2 flex items-center justify-between rounded-xl border border-gold/30 bg-maroon/40 p-3">
-                <button onClick={() => setForm({ ...form, luggageCount: Math.max(1, form.luggageCount - 1) })}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon">
-                  <Minus className="h-4 w-4" />
-                </button>
-                <div className="text-center">
-                  <div className="font-display text-4xl text-gold leading-none">{form.luggageCount}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-cream/60 mt-1">bags · ₹{fare} fare</div>
-                </div>
-                <button onClick={() => setForm({ ...form, luggageCount: Math.min(10, form.luggageCount + 1) })}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon">
-                  <Plus className="h-4 w-4" />
-                </button>
+          <div className="space-y-5">
+
+            {/* Section A: Train Details */}
+            <div className="form-step-card space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-gold text-maroon text-xs font-bold">A</div>
+                <span className="text-xs uppercase tracking-widest text-cream/50">Train Details</span>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-widest text-cream/60 mb-1 block">Train</label>
+                <select value={form.trainNumber}
+                  onChange={e => { const t = TRAINS.find(x => x.num === e.target.value)!; setForm({ ...form, trainNumber: t.num, trainName: t.name }); }}
+                  className="w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold/70 transition">
+                  {TRAINS.map(t => <option key={t.num} className="bg-maroon">{t.num} · {t.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <SelectField label="Arrival Station" value={form.arrivalStation} onChange={v => setForm({ ...form, arrivalStation: v })} options={STATIONS_LIST} />
+                <SelectField label="Departure Station" value={form.departureStation} onChange={v => setForm({ ...form, departureStation: v })} options={STATIONS_LIST} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <InputField label="Platform #" value={form.platform} onChange={v => setForm({ ...form, platform: v })} />
+                <InputField label="Bogie #" value={form.bogie} onChange={v => setForm({ ...form, bogie: v })} />
               </div>
             </div>
-            <LuggageCapture value={form.luggagePhoto} onChange={p => setForm({ ...form, luggagePhoto: p })} />
-            <div>
-              <label className="text-xs uppercase tracking-widest text-cream/60">Service Mode</label>
-              <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-gold/30 bg-maroon/40 p-1">
+
+            {/* Section B: Luggage */}
+            <div className="form-step-card space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-gold text-maroon text-xs font-bold">B</div>
+                <span className="text-xs uppercase tracking-widest text-cream/50">Luggage Details</span>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-widest text-cream/60">Number of Bags</label>
+                <div className="mt-2 flex items-center justify-between rounded-xl border border-gold/30 bg-maroon/40 p-3">
+                  <button onClick={() => setForm({ ...form, luggageCount: Math.max(1, form.luggageCount - 1) })}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon shadow-[0_0_12px_oklch(0.78_0.14_75/0.4)] active:scale-95 transition">
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <div className="text-center">
+                    <div className="font-display text-4xl text-gold leading-none">{form.luggageCount}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-cream/60 mt-1">bags · ₹{fare} fare</div>
+                  </div>
+                  <button onClick={() => setForm({ ...form, luggageCount: Math.min(10, form.luggageCount + 1) })}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold text-maroon shadow-[0_0_12px_oklch(0.78_0.14_75/0.4)] active:scale-95 transition">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <LuggageCapture value={form.luggagePhoto} onChange={p => setForm({ ...form, luggagePhoto: p })} />
+            </div>
+
+            {/* Section C: Service Mode */}
+            <div className="form-step-card">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-gold text-maroon text-xs font-bold">C</div>
+                <span className="text-xs uppercase tracking-widest text-cream/50">Service Mode</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-gold/30 bg-maroon/40 p-1">
                 {(["platform", "bogie"] as const).map(m => (
                   <button key={m} onClick={() => setForm({ ...form, serviceMode: m })}
-                    className={`relative rounded-lg py-2 text-sm font-medium transition ${form.serviceMode === m ? "text-maroon" : "text-cream/70"}`}>
-                    {form.serviceMode === m && <motion.div layoutId="svc-pill" className="absolute inset-0 rounded-lg bg-gradient-gold" />}
-                    <span className="relative">{m === "platform" ? "Platform Pickup" : "Inside Bogie Delivery"}</span>
+                    className={`relative rounded-lg py-2.5 text-sm font-medium transition ${form.serviceMode === m ? "text-maroon" : "text-cream/70 hover:text-cream"}`}>
+                    {form.serviceMode === m && <motion.div layoutId="svc-pill" className="absolute inset-0 rounded-lg bg-gradient-gold shadow-[0_0_12px_oklch(0.78_0.14_75/0.4)]" />}
+                    <span className="relative">{m === "platform" ? "🚉 Platform Pickup" : "🚃 Inside Bogie"}</span>
                   </button>
                 ))}
               </div>
             </div>
+
             {bookingError && (
-              <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-900/30 p-3 text-sm text-red-200">
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-900/30 p-3 text-sm text-red-200"
+              >
                 <AlertCircle className="h-4 w-4 flex-shrink-0" /> {bookingError}
-              </div>
+              </motion.div>
             )}
+
             <button onClick={() => setShowSearch(true)}
-              className="w-full rounded-xl bg-gradient-gold py-4 font-display text-xl font-bold text-maroon glow-gold hover:opacity-95 active:scale-[0.99] transition">
-              <Sparkles className="inline h-5 w-5 mr-2" /> Book Coolie Now · ₹{fare}
+              className="btn-premium w-full justify-center text-lg">
+              <Sparkles className="h-5 w-5" /> Book Coolie Now · ₹{fare}
             </button>
-            <p className="text-center text-[10px] text-cream/50 uppercase tracking-widest">
+            <p className="text-center text-[10px] text-cream/40 uppercase tracking-widest">
               <Lock className="inline h-3 w-3 mr-1" /> Amount held in escrow · Admin: {ADMIN_SUPPORT}
             </p>
           </div>
@@ -215,7 +255,7 @@ function Passenger() {
                     )}
                   </div>
 
-                  {/* Coolie info (privacy shield: no phone number) */}
+                  {/* Coolie info */}
                   {assignedCoolie && (
                     <div className="mb-4">
                       {lastBooking.status === "requested" ? (
@@ -233,7 +273,6 @@ function Passenger() {
                               </div>
                             </div>
                             <div className="ml-auto text-right">
-                              {/* PRIVACY SHIELD: Never show coolie contact */}
                               <div className="text-[10px] text-cream/50 uppercase tracking-widest">Need help?</div>
                               <div className="font-mono text-xs text-gold">{ADMIN_SUPPORT}</div>
                             </div>
@@ -243,7 +282,7 @@ function Passenger() {
                     </div>
                   )}
 
-                  {/* OTP */}
+                  {/* OTP Display */}
                   {lastBooking.status === "assigned" && (
                     <div className="text-center">
                       <p className="text-xs text-cream/70 mb-3">Share this 4-digit OTP with your porter</p>
@@ -260,7 +299,7 @@ function Passenger() {
 
                   {["requested", "assigned"].includes(lastBooking.status) && (
                     <button onClick={() => handleCancel(lastBooking.id)} disabled={cancellingId === lastBooking.id}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/30 px-5 py-2 text-sm text-red-200 hover:bg-red-900/50">
+                      className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/30 px-5 py-2 text-sm text-red-200 hover:bg-red-900/50 transition">
                       {cancellingId === lastBooking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                       Cancel Deal
                     </button>
@@ -322,7 +361,12 @@ function BookingList({ bookings, coolies, emptyMsg, onCancel, cancellingId, show
   emptyMsg: string; onCancel?: (id: string) => void; cancellingId?: string | null;
   showCancel?: boolean; showOtp?: boolean; showFareBreakdown?: boolean; showFareStatus?: boolean;
 }) {
-  if (bookings.length === 0) return <p className="text-sm text-cream/60">{emptyMsg}</p>;
+  if (bookings.length === 0) return (
+    <div className="py-6 text-center">
+      <div className="text-3xl mb-2 opacity-50">📭</div>
+      <p className="text-sm text-cream/50">{emptyMsg}</p>
+    </div>
+  );
   return (
     <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
       {bookings.map(b => {
@@ -331,7 +375,7 @@ function BookingList({ bookings, coolies, emptyMsg, onCancel, cancellingId, show
         const adminShare = Math.round(effectiveFare * 0.2);
         const coolieShare = effectiveFare - adminShare;
         return (
-          <div key={b.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-3">
+          <div key={b.id} className="rounded-xl border border-gold/20 bg-maroon/40 p-3 hover:border-gold/35 transition">
             <div className="flex items-start gap-3">
               {b.luggagePhoto
                 ? <img src={b.luggagePhoto} alt="" className="h-14 w-14 rounded-lg object-cover border border-gold/40 flex-shrink-0" />
@@ -343,7 +387,6 @@ function BookingList({ bookings, coolies, emptyMsg, onCancel, cancellingId, show
                   <span className="text-xs text-cream/60">P{b.platform} · {b.luggageCount}bg</span>
                   <StatusBadge status={b.status} />
                 </div>
-                {/* Fare status */}
                 {showFareStatus && (
                   <div className="mt-1">
                     {b.fareConfirmed
@@ -351,7 +394,6 @@ function BookingList({ bookings, coolies, emptyMsg, onCancel, cancellingId, show
                       : <span className="text-xs text-yellow-200 flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Rate Calculating: Please Wait…</span>}
                   </div>
                 )}
-                {/* PRIVACY SHIELD: show coolie name/badge only, never phone */}
                 {coolie && (
                   <div className="mt-1 flex items-center gap-2 text-xs text-cream/70">
                     <span>{coolie.avatar} {coolie.name}</span>
@@ -395,9 +437,9 @@ function StatusBadge({ status }: { status: string }) {
 function InputField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <label className="text-xs uppercase tracking-widest text-cream/60">{label}</label>
+      <label className="text-xs uppercase tracking-widest text-cream/60 mb-1 block">{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold" />
+        className="input-royal" />
     </div>
   );
 }
@@ -405,9 +447,9 @@ function InputField({ label, value, onChange }: { label: string; value: string; 
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <div>
-      <label className="text-xs uppercase tracking-widest text-cream/60">{label}</label>
+      <label className="text-xs uppercase tracking-widest text-cream/60 mb-1 block">{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold">
+        className="w-full rounded-xl border border-gold/30 bg-maroon/40 px-4 py-3 text-cream outline-none focus:border-gold/70 transition">
         {options.map(o => <option key={o} className="bg-maroon">{o}</option>)}
       </select>
     </div>

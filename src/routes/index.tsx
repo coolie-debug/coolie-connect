@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { User, Briefcase, Shield, Package, ArrowRight, ChevronRight, Train, Star, Clock, IndianRupee } from "lucide-react";
+import { User, Briefcase, Shield, Package, ChevronRight, Train, Star, Clock, IndianRupee } from "lucide-react";
 
 export const Route = createFileRoute("/")({ component: Index });
 
 const HERO_IMG    = "https://as1.ftcdn.net/jpg/05/63/07/80/1000_F_563078047_gfb7Zh8EmqFuke0f3zupxdW0Lk6HxTbs.jpg";
-const LUGGAGE_IMG = "https://toppng.com/uploads/preview/luggage-png-11553963415ljy0spq6os.png";
+const LUGGAGE_IMG = "https://static.vecteezy.com/system/resources/thumbnails/004/957/869/small/bag-luggage-illustration-vector.jpg";
 const COOLIE_IMG  = "https://images.mid-day.com/images/images/2016/jun/MD-anni-Coolie.jpg";
 const PARCEL_IMG  = "https://www.assureshift.in/sites/default/files/images/blog/bike-parcel-by-train-in-india.jpg";
 
@@ -15,12 +15,12 @@ const SECTIONS = [
     img: LUGGAGE_IMG,
     tag: "TRAVELLER",
     label: "Passenger",
-    sublabel: "Book a Porter",
-    desc: "Certified porters · OTP handoff · Escrow pay",
+    sublabel: "Book a Coolie",
+    desc: "Certified coolies · OTP handoff · Escrow pay",
     icon: User,
     accent: "from-blue-900/80 via-blue-900/50 to-transparent",
     badge: "bg-blue-500",
-    imgStyle: "object-contain object-center scale-110",
+    imgStyle: "object-cover object-center",
     bg: "bg-blue-950",
   },
   {
@@ -70,7 +70,7 @@ const TICKER_ITEMS = [
   "🚆 HWH — Howrah Junction",
   "🚆 MAS — Chennai Central",
   "🚆 SBC — KSR Bengaluru City",
-  "🛄 Verified Porters Only",
+  "🛄 Verified Coolies Only",
   "🔒 OTP-Secured Handoff",
   "💰 Transparent Fare",
   "⚡ Real-time Dispatch",
@@ -83,16 +83,14 @@ function Index() {
       {/* ── TOP LOGO BAR ─────────────────────────────────────────────────── */}
       <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(0.88_0.17_82)] to-[oklch(0.65_0.12_58)] shadow-[0_0_16px_oklch(0.78_0.14_75/0.5)]">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-[oklch(0.22_0.08_22)]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a3 3 0 0 1 3 3v1h2a2 2 0 0 1 2 2v1H5V8a2 2 0 0 1 2-2h2V5a3 3 0 0 1 3-3z" />
-              <rect x="3" y="11" width="18" height="9" rx="2" />
-              <path d="M7 15h.01M12 15h.01M17 15h.01" strokeWidth={2.5} />
-            </svg>
+          {/* Coolie badge icon */}
+          <div className="flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, oklch(0.88 0.17 82), oklch(0.65 0.12 58))", boxShadow: "0 0 16px oklch(0.78 0.14 75 / 0.5)" }}>
+            <Train className="h-5 w-5 text-[oklch(0.22_0.08_22)]" strokeWidth={2.2} />
           </div>
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display text-xl font-extrabold tracking-widest text-[oklch(0.85_0.16_80)]">COOLIE</span>
+              <span className="font-display text-xl font-extrabold tracking-widest" style={{ color: "oklch(0.85 0.16 80)", letterSpacing: "0.1em" }}>COOLIE</span>
               <span className="text-xl font-semibold text-white/90" style={{ fontFamily: "'Noto Sans Devanagari', serif" }}>मित्र</span>
             </div>
             <p className="text-[9px] uppercase tracking-[0.22em] text-white/40">Royal Railway Concierge</p>
@@ -111,7 +109,6 @@ function Index() {
           className="absolute inset-0 h-full w-full object-cover object-center"
           loading="eager"
         />
-        {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
 
@@ -120,22 +117,26 @@ function Index() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/80 backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-              India's First Railway Porter Platform
+              India's First Railway Coolie Platform
             </div>
             <h1 className="font-display text-5xl font-bold leading-tight text-white md:text-7xl">
               Coolie <span style={{ color: "oklch(0.85 0.16 80)" }}>मित्र</span>
             </h1>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/70 md:text-base">
-              Certified railway porters · OTP-secured handoffs · Real-time dispatch
+
+            {/* Deep red subtitle */}
+            <p className="mt-2 max-w-sm text-sm font-semibold leading-relaxed md:text-base" style={{ color: "#dc2626" }}>
+              Certified railway coolies · OTP-secured handoffs · Real-time dispatch
             </p>
+
+            {/* Blinking CTA buttons */}
             <div className="mt-5 flex flex-wrap gap-3">
               <Link to="/passenger"
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-sm text-[oklch(0.22_0.08_22)] transition active:scale-95"
-                style={{ background: "linear-gradient(135deg, oklch(0.88 0.17 82), oklch(0.65 0.12 58))", boxShadow: "0 4px 20px oklch(0.78 0.14 75 / 0.5)" }}>
-                <Package className="h-4 w-4" /> Book a Porter
+                className="btn-blink inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-sm text-[oklch(0.22_0.08_22)] transition active:scale-95"
+                style={{ background: "linear-gradient(135deg, oklch(0.88 0.17 82), oklch(0.65 0.12 58))" }}>
+                <Package className="h-4 w-4" /> Book a Coolie
               </Link>
               <Link to="/coolie/onboard"
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition active:scale-95 hover:bg-white/20">
+                className="btn-blink-outline inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition active:scale-95">
                 <Briefcase className="h-4 w-4" /> Join as Coolie
               </Link>
             </div>
@@ -146,10 +147,10 @@ function Index() {
         <div className="absolute bottom-0 left-0 right-0 hidden md:flex">
           <div className="grid grid-cols-4 w-full border-t border-white/10 bg-black/50 backdrop-blur-md">
             {[
-              { icon: Train, v: "5+", l: "Major Stations" },
-              { icon: Star, v: "4.9★", l: "Rating" },
-              { icon: IndianRupee, v: "₹100", l: "Base Rate / Bag" },
-              { icon: Clock, v: "<2 min", l: "Dispatch Time" },
+              { icon: Train,         v: "5+",    l: "Major Stations" },
+              { icon: Star,          v: "4.9★",  l: "Rating" },
+              { icon: IndianRupee,   v: "₹100",  l: "Base Rate / Bag" },
+              { icon: Clock,         v: "<2 min", l: "Dispatch Time" },
             ].map(({ icon: Icon, v, l }) => (
               <div key={l} className="flex items-center justify-center gap-2 py-3 border-r border-white/10 last:border-r-0">
                 <Icon className="h-4 w-4 text-[oklch(0.85_0.16_80)]" />
@@ -191,7 +192,6 @@ function Index() {
             >
               <Link to={to} className="group block">
                 <div className={`relative overflow-hidden rounded-2xl ${bg}`} style={{ aspectRatio: "3/4" }}>
-                  {/* Image */}
                   <img
                     src={img}
                     alt={label}
@@ -199,13 +199,10 @@ function Index() {
                     loading="lazy"
                     onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0"; }}
                   />
-                  {/* Gradient overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-t ${accent} opacity-95`} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
 
-                  {/* Content */}
                   <div className="absolute inset-0 flex flex-col justify-between p-3">
-                    {/* Top: tag */}
                     <div className="flex items-center justify-between">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white ${badge}`}>
                         {tag}
@@ -215,7 +212,6 @@ function Index() {
                       </div>
                     </div>
 
-                    {/* Bottom: name + CTA */}
                     <div>
                       <p className="text-[10px] text-white/60 font-medium uppercase tracking-wider">{sublabel}</p>
                       <h3 className="font-display text-xl font-bold leading-tight text-white mt-0.5">{label}</h3>
@@ -240,9 +236,9 @@ function Index() {
         <h2 className="font-display text-2xl font-bold text-white mb-5">How It Works</h2>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { n: "01", t: "Book Online", d: "Pick your train, platform, and number of bags. Select a verified porter." },
-            { n: "02", t: "Escrow Lock", d: "Fare is held in secure escrow until your porter arrives and verifies OTP." },
-            { n: "03", t: "OTP Handoff", d: "Share a 4-digit OTP with your porter. Payment releases on match." },
+            { n: "01", t: "Book a Coolie", d: "Pick your train, platform, and number of bags. Select a verified coolie." },
+            { n: "02", t: "Escrow Lock",   d: "Fare is held in secure escrow until your coolie arrives and verifies OTP." },
+            { n: "03", t: "OTP Handoff",   d: "Share a 4-digit OTP with your coolie. Payment releases on match." },
           ].map(({ n, t, d }) => (
             <div key={n} className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <div className="font-display text-4xl font-bold mb-3" style={{ color: "oklch(0.78 0.14 75 / 0.5)" }}>{n}</div>
